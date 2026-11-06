@@ -1,0 +1,270 @@
+{% extends 'base.html' %}
+{% block title %}Ethics Gate Review &bull; ETHIC-Loop{% endblock %}
+{% block page_title %}Ethics Gate Checkpoint Review{% endblock %}
+
+{% block content %}
+<!-- Project Selector Header -->
+<div class="card" style="padding:16px 20px; margin-bottom:20px;">
+  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+    <div style="display:flex; align-items:center; gap:12px;">
+      <span style="font-weight:700; color:var(--color-forest);">Select Project:</span>
+      <form method="GET" action="{{ url_for('gates') }}" id="gateProjForm">
+        <select name="project_id" class="form-select" onchange="document.getElementById('gateProjForm').submit()" style="width:320px; font-weight:600;">
+          {% for p in projects %}
+            <option value="{{ p.id }}" {% if p.id == project.id %}selected{% endif %}>
+              {{ p.name }} {% if p.is_demo %}(Demo){% endif %}
+            </option>
+          {% endfor %}
+        </select>
+      </form>
+    </div>
+
+    <div>
+      <span style="font-size:12px; color:var(--color-charcoal-muted);">Current Stage:</span>
+      <span class="badge badge-sage" style="margin-left:4px;">{{ project.current_stage }}</span>
+      <span class="badge {% if project.status == 'Active' %}badge-gate-Proceed{% elif project.status == 'Remediating' %}badge-gate-Remediate{% else %}badge-gate-Conditions{% endif %}" style="margin-left:4px;">
+        {{ project.status }}
+      </span>
+    </div>
+  </div>
+</div>
+
+<!-- Ethical Governance Principle Box -->
+<div class="card" style="padding:16px 20px; margin-bottom:24px; background:var(--color-cream-card); border-left:4px solid var(--color-forest);">
+  <div style="display:flex; align-items:flex-start; gap:12px;">
+    <i data-lucide="scale" style="width:24px;height:24px;color:var(--color-forest);flex-shrink:0;margin-top:2px;"></i>
+    <div>
+      <strong style="color:var(--color-forest); font-size:13.5px;">Core Principle of ETHIC-Loop Human Gatekeeping:</strong>
+      <p style="font-size:12.5px; color:var(--color-charcoal); margin-top:4px; line-height:1.5;">
+        A system must <strong>never be automatically declared ethically safe</strong> simply because a mathematical risk score is low.
+        Human review boards must evaluate qualitative harms, context-specific rights impacts, and verifiable evidence.
+        Four definitive gate decisions govern advancement: <strong>Proceed</strong>, <strong>Proceed with Conditions</strong>, <strong>Remediate and Review Again</strong>, or <strong>Stop / Escalate</strong>.
+      </p>
+    </div>
+  </div>
+</div>
+
+<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(460px, 1fr)); gap:24px;">
+  <!-- Ethics Gate Review Form -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">
+        <i data-lucide="shield-check" class="nav-icon" style="color:var(--color-forest);"></i>
+        <span>Conduct Ethics Gate Deliberation</span>
+      </div>
+    </div>
+
+    <form action="{{ url_for('submit_gate_review') }}" method="POST" id="gateReviewForm">
+      <input type="hidden" name="project_id" value="{{ project.id }}">
+
+      <div class="form-row">
+        <div class="form-col">
+          <label class="form-label">Lifecycle Stage to Deliberate *</label>
+          <select name="stage_name" class="form-select" required>
+            {% for s in stages %}
+              <option value="{{ s.stage_name }}" {% if s.stage_name == project.current_stage %}selected{% endif %}>
+                Stage {{ s.stage_order }}: {{ s.stage_name }} ({{ s.status }})
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-col">
+          <label class="form-label">Review Date</label>
+          <input type="text" class="form-control" value="Current Session Timestamp" readonly style="background:var(--color-cream);">
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-col">
+          <label class="form-label">Reviewer Name *</label>
+          <input type="text" name="reviewer_name" class="form-control" placeholder="e.g. Dr. Sarah Lin" required>
+        </div>
+        <div class="form-col">
+          <label class="form-label">Reviewer Role / Board *</label>
+          <input type="text" name="reviewer_role" class="form-control" placeholder="e.g. Lead Ethical Compliance Officer" required>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Identified Risks Deliberated</label>
+        <textarea name="risks_reviewed" class="form-control" rows="2" placeholder="List key risks reviewed (e.g. Bias screening score 20 - Critical, Candidate data leakage score 12 - High)...">{% if risks %}Deliberated {{ risks|length }} identified risk(s) including: {{ risks[0].title }} (Score: {{ risks[0].risk_score }} - {{ risks[0].severity }}){% endif %}</textarea>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Verifiable Evidence & Audit Artifacts Examined</label>
+        <textarea name="evidence_reviewed" class="form-control" rows="2" placeholder="Document specific artifacts inspected (e.g. Disparate impact ratio audit test run #104, WCAG accessibility scan, model card)..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Comprehensive Review Notes & Moral Reasoning *</label>
+        <textarea name="review_notes" class="form-control" rows="3" placeholder="Provide qualitative justification for the gate decision. Note any unresolved ethical tensions or stakeholder impacts..." required></textarea>
+      </div>
+
+      <!-- Decision Select with Dynamic Conditional Display -->
+      <div class="form-group">
+        <label class="form-label" style="font-size:13px; font-weight:700; color:var(--color-forest);">
+          Ethics Gate Human Decision *
+        </label>
+        <select name="decision" id="gate_decision" class="form-select" style="font-weight:700; font-size:14px; border:2px solid var(--color-forest);" required>
+          <option value="">-- Select Decision --</option>
+          <option value="Proceed">1. Proceed (Approve stage advancement)</option>
+          <option value="Proceed with Conditions">2. Proceed with Conditions (Approve with binding covenants)</option>
+          <option value="Remediate and Review Again">3. Remediate and Review Again (Corrective actions required)</option>
+          <option value="Stop or Escalate">4. Stop or Escalate (Block pipeline & alert oversight committee)</option>
+        </select>
+      </div>
+
+      <!-- Conditional Field: Proceed with Conditions -->
+      <div class="form-group" id="conditions_group" style="display:none; background:#fefce8; padding:14px; border-radius:var(--radius-md); border:1px solid #fde047;">
+        <label class="form-label" style="color:#854d0e; font-weight:700;">
+          <i data-lucide="alert-triangle" style="width:14px;height:14px;display:inline;"></i> Mandatory Binding Conditions *
+        </label>
+        <textarea name="conditions" id="conditions" class="form-control" rows="2" placeholder="Document specific ongoing conditions (e.g. Mandatory monthly statistical parity audit submissions; human spot-checks on all borderline scores)..."></textarea>
+        <div class="form-help">At least one documented condition is strictly mandatory when selecting this decision.</div>
+      </div>
+
+      <!-- Conditional Field: Remediate and Review Again -->
+      <div class="form-group" id="actions_group" style="display:none; background:#fff7ed; padding:14px; border-radius:var(--radius-md); border:1px solid #fed7aa;">
+        <label class="form-label" style="color:#9a3412; font-weight:700;">
+          <i data-lucide="rotate-ccw" style="width:14px;height:14px;display:inline;"></i> Required Corrective Remediation Actions *
+        </label>
+        <textarea name="required_actions" id="required_actions" class="form-control" rows="2" placeholder="Specify technical and procedural remediation tasks (e.g. Audit training data for demographic skew, apply re-weighting, and submit verifiable retest logs)..."></textarea>
+
+        <div class="form-row" style="margin-top:10px;">
+          <div class="form-col">
+            <label class="form-label">Action Owner</label>
+            <input type="text" name="action_owner" class="form-control" placeholder="e.g. Kevin Chen (Lead ML Engineer)">
+          </div>
+          <div class="form-col">
+            <label class="form-label">Target Completion Date</label>
+            <input type="date" name="target_completion_date" class="form-control">
+          </div>
+        </div>
+        <div class="form-help">Stage will enter 'Remediating' state and prevent deployment until resolved.</div>
+      </div>
+
+      <!-- Conditional Alert: Stop or Escalate -->
+      <div id="escalate_alert" style="display:none; background:#fee2e2; border:1px solid #fca5a5; color:#991b1b; padding:12px; border-radius:var(--radius-md); margin-bottom:16px; font-size:12.5px;">
+        <strong>Pipeline Halt Notice:</strong> Selecting 'Stop or Escalate' will immediately suspend development on this project and freeze stage progression until formal institutional review.
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
+        <button type="submit" class="btn btn-primary">
+          <i data-lucide="check" style="width:14px;height:14px;"></i> Submit Official Gate Decision
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Historical Decisions & Open Corrective Actions -->
+  <div>
+    <!-- Gate Review History Log -->
+    <div class="card" style="margin-bottom:24px;">
+      <div class="card-header">
+        <div class="card-title">
+          <i data-lucide="history" class="nav-icon" style="color:var(--color-forest);"></i>
+          <span>Official Gate Review History ({{ gates_history|length }})</span>
+        </div>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:14px;">
+        {% for g in gates_history %}
+        <div style="padding:14px; background:var(--color-cream-card); border-radius:var(--radius-md); border:1px solid var(--color-cream-border);">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:8px;">
+            <div>
+              <strong style="font-size:14px; color:var(--color-forest);">Stage: {{ g.stage_name }}</strong>
+              <div style="font-size:11px; color:var(--color-charcoal-muted);">Reviewed: {{ g.review_date }}</div>
+            </div>
+            <div>
+              {% if 'Proceed with Conditions' in g.decision %}
+                <span class="badge badge-gate-Conditions">{{ g.decision }}</span>
+              {% elif 'Proceed' in g.decision %}
+                <span class="badge badge-gate-Proceed">{{ g.decision }}</span>
+              {% elif 'Remediate' in g.decision %}
+                <span class="badge badge-gate-Remediate">{{ g.decision }}</span>
+              {% else %}
+                <span class="badge badge-gate-Stop">{{ g.decision }}</span>
+              {% endif %}
+            </div>
+          </div>
+
+          <div style="margin-top:8px; font-size:12.5px; color:var(--color-charcoal); line-height:1.4;">
+            <strong>Review Findings:</strong> {{ g.review_notes }}
+          </div>
+
+          {% if g.conditions %}
+            <div style="margin-top:6px; font-size:12px; color:var(--color-risk-mod); background:#fefce8; padding:8px; border-radius:4px; border-left:3px solid #facc15;">
+              <strong>Mandated Conditions:</strong> {{ g.conditions }}
+            </div>
+          {% endif %}
+
+          {% if g.required_actions %}
+            <div style="margin-top:6px; font-size:12px; color:var(--color-risk-crit); background:#fff7ed; padding:8px; border-radius:4px; border-left:3px solid var(--color-risk-crit);">
+              <strong>Corrective Action:</strong> {{ g.required_actions }}
+              <div style="font-size:11px; margin-top:3px; color:var(--color-charcoal-muted);">
+                Owner: <strong>{{ g.action_owner or 'Unassigned' }}</strong> &bull; Target: {{ g.target_completion_date or 'TBD' }}
+              </div>
+            </div>
+          {% endif %}
+
+          <div style="font-size:11px; color:var(--color-charcoal-muted); margin-top:8px; padding-top:6px; border-top:1px dashed var(--color-cream-border);">
+            Signoff: <strong>{{ g.reviewer_name }}</strong> ({{ g.reviewer_role }})
+          </div>
+        </div>
+        {% else %}
+        <p style="font-size:13px; color:var(--color-charcoal-muted); padding:16px 0; text-align:center;">
+          No Ethics Gate reviews have been conducted for this project yet.
+        </p>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Corrective Actions Tracker Linked to Gate -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">
+          <i data-lucide="clipboard-list" class="nav-icon" style="color:var(--color-forest);"></i>
+          <span>Track Open Corrective Actions</span>
+        </div>
+      </div>
+
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        {% for a in actions %}
+        <div style="padding:12px; background:#FFFFFF; border:1px solid var(--color-cream-border); border-radius:var(--radius-md);">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <strong style="font-size:13px; color:var(--color-forest);">{{ a.action_title }}</strong>
+            <span class="badge {% if a.status == 'Verified & Closed' %}badge-gate-Proceed{% elif a.status == 'In Progress' %}badge-sage{% else %}badge-gate-Conditions{% endif %}">
+              {{ a.status }}
+            </span>
+          </div>
+          <p style="font-size:12px; color:var(--color-charcoal); margin-top:4px;">{{ a.description }}</p>
+
+          {% if a.resolution_notes %}
+            <div style="font-size:11.5px; color:var(--color-risk-low); margin-top:4px; background:#f0fdf4; padding:6px; border-radius:4px;">
+              <strong>Resolution:</strong> {{ a.resolution_notes }}
+            </div>
+          {% endif %}
+
+          <!-- Form to update action status -->
+          <form action="{{ url_for('update_corrective_action', action_id=a.id) }}" method="POST" style="margin-top:8px; display:flex; gap:8px; align-items:center;">
+            <select name="status" class="form-select" style="font-size:11.5px; padding:4px 8px; width:150px;">
+              <option value="Open" {% if a.status == 'Open' %}selected{% endif %}>Open</option>
+              <option value="In Progress" {% if a.status == 'In Progress' %}selected{% endif %}>In Progress</option>
+              <option value="Verified & Closed" {% if a.status == 'Verified & Closed' %}selected{% endif %}>Verified & Closed</option>
+            </select>
+            <input type="text" name="resolution_notes" class="form-control" value="{{ a.resolution_notes or '' }}" placeholder="Retest notes..." style="font-size:11.5px; padding:4px 8px; flex:1;">
+            <button type="submit" class="btn btn-outline btn-sm" style="padding:4px 10px; font-size:11.5px;">Update</button>
+          </form>
+        </div>
+        {% else %}
+        <p style="font-size:12.5px; color:var(--color-charcoal-muted);">No open corrective actions assigned.</p>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/ethics_gate.js') }}"></script>
+{% endblock %}

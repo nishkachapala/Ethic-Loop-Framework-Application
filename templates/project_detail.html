@@ -1,0 +1,299 @@
+{% extends 'base.html' %}
+{% block title %}{{ project.name }} &bull; ETHIC-Loop{% endblock %}
+{% block page_title %}Project: {{ project.name }}{% endblock %}
+
+{% block content %}
+<!-- Project Header Overview Card -->
+<div class="card" style="border-top:4px solid var(--color-forest);">
+  <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px;">
+    <div>
+      <div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;">
+        <h1 style="font-size:22px; color:var(--color-forest);">{{ project.name }}</h1>
+        {% if project.is_demo %}
+          <span class="badge badge-demo">Demonstration Data</span>
+        {% endif %}
+      </div>
+      <p style="color:var(--color-charcoal-light); font-size:13.5px; max-width:750px; line-height:1.5;">
+        {{ project.description or 'No scope description recorded.' }}
+      </p>
+    </div>
+
+    <div style="display:flex; gap:10px;">
+      <button class="btn btn-outline btn-sm" onclick="openModal('editProjectModal')">
+        <i data-lucide="edit-3" style="width:14px;height:14px;"></i> Edit Details
+      </button>
+      <a href="{{ url_for('export_pdf', project_id=project.id) }}" class="btn btn-primary btn-sm">
+        <i data-lucide="download" style="width:14px;height:14px;"></i> Export PDF Report
+      </a>
+    </div>
+  </div>
+
+  <div style="display:flex; gap:24px; flex-wrap:wrap; margin-top:20px; padding-top:16px; border-top:1px solid var(--color-cream-border); font-size:12.5px;">
+    <div>
+      <span style="color:var(--color-charcoal-muted); font-weight:600;">DOMAIN:</span>
+      <strong style="margin-left:4px;">{{ project.domain }}</strong>
+    </div>
+    <div>
+      <span style="color:var(--color-charcoal-muted); font-weight:600;">OWNER:</span>
+      <strong style="margin-left:4px;">{{ project.owner }}</strong>
+    </div>
+    <div>
+      <span style="color:var(--color-charcoal-muted); font-weight:600;">SDLC STAGE:</span>
+      <span class="badge badge-sage" style="margin-left:4px;">{{ project.current_stage }}</span>
+    </div>
+    <div>
+      <span style="color:var(--color-charcoal-muted); font-weight:600;">STATUS:</span>
+      <span class="badge {% if project.status == 'Active' %}badge-gate-Proceed{% elif project.status == 'Remediating' %}badge-gate-Remediate{% else %}badge-gate-Conditions{% endif %}" style="margin-left:4px;">
+        {{ project.status }}
+      </span>
+    </div>
+    <div>
+      <span style="color:var(--color-charcoal-muted); font-weight:600;">CREATED:</span>
+      <span style="margin-left:4px;">{{ project.created_at }}</span>
+    </div>
+  </div>
+</div>
+
+<!-- Quick Navigation Bar for Project Modules -->
+<div style="display:flex; gap:12px; margin-bottom:24px; flex-wrap:wrap;">
+  <a href="{{ url_for('workflow', project_id=project.id) }}" class="btn btn-outline-sage" style="flex:1; justify-content:center;">
+    <i data-lucide="git-merge" class="nav-icon"></i> 1. SDLC Stages
+  </a>
+  <a href="{{ url_for('risks', project_id=project.id) }}" class="btn btn-outline-sage" style="flex:1; justify-content:center;">
+    <i data-lucide="shield-alert" class="nav-icon"></i> 2. Risk Register ({{ risks|length }})
+  </a>
+  <a href="{{ url_for('gates', project_id=project.id) }}" class="btn btn-outline-sage" style="flex:1; justify-content:center;">
+    <i data-lucide="check-check" class="nav-icon"></i> 3. Ethics Gates ({{ gates|length }})
+  </a>
+  <a href="{{ url_for('pillars', project_id=project.id) }}" class="btn btn-outline-sage" style="flex:1; justify-content:center;">
+    <i data-lucide="layers" class="nav-icon"></i> 4. 5 Pillars (E-T-H-I-C)
+  </a>
+  <a href="{{ url_for('monitoring', project_id=project.id) }}" class="btn btn-outline-sage" style="flex:1; justify-content:center;">
+    <i data-lucide="activity" class="nav-icon"></i> 5. Incidents & Audits ({{ incidents|length }})
+  </a>
+</div>
+
+<!-- Two Column Grid for Key Details -->
+<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(460px, 1fr)); gap:24px;">
+  <!-- SDLC Stage Progression Table -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">
+        <i data-lucide="git-commit" class="nav-icon" style="color:var(--color-forest);"></i>
+        <span>SDLC Lifecycle Stage Status</span>
+      </div>
+      <a href="{{ url_for('workflow', project_id=project.id) }}" class="btn btn-outline btn-sm">Full Workflow</a>
+    </div>
+    <div class="table-responsive">
+      <table class="custom-table">
+        <thead>
+          <tr>
+            <th>Stage</th>
+            <th>Assigned Lead</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in stages %}
+          <tr>
+            <td>
+              <strong>{{ s.stage_order }}. {{ s.stage_name }}</strong>
+            </td>
+            <td>{{ s.assigned_reviewer or 'Unassigned' }}</td>
+            <td>
+              {% if s.status == 'Passed Gate' %}
+                <span class="badge badge-gate-Proceed">{{ s.status }}</span>
+              {% elif s.status == 'Remediating' %}
+                <span class="badge badge-gate-Remediate">{{ s.status }}</span>
+              {% elif s.status == 'Gate Review Pending' %}
+                <span class="badge badge-gate-Conditions">{{ s.status }}</span>
+              {% elif s.status == 'In Progress' %}
+                <span class="badge badge-sage">{{ s.status }}</span>
+              {% else %}
+                <span class="badge badge-cream">{{ s.status }}</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Top Identified Ethical Risks -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">
+        <i data-lucide="alert-triangle" class="nav-icon" style="color:var(--color-forest);"></i>
+        <span>Highest Priority Ethical Risks</span>
+      </div>
+      <a href="{{ url_for('risks', project_id=project.id) }}" class="btn btn-outline btn-sm">All Risks</a>
+    </div>
+    <div class="table-responsive">
+      <table class="custom-table">
+        <thead>
+          <tr>
+            <th>Risk Title</th>
+            <th>Pillar</th>
+            <th>Score (L&times;I)</th>
+            <th>Severity</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in risks[:4] %}
+          <tr>
+            <td>
+              <strong>{{ r.title }}</strong>
+            </td>
+            <td><span style="font-size:11px;">{{ r.pillar }}</span></td>
+            <td><strong>{{ r.likelihood }} &times; {{ r.impact }} = {{ r.risk_score }}</strong></td>
+            <td>
+              <span class="badge badge-risk-{{ r.severity }}">{{ r.severity }}</span>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td colspan="4" style="text-align:center; color:var(--color-charcoal-muted);">No risks logged for this project yet.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Ethics Gate Decision Audit Trail & Corrective Actions -->
+<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(460px, 1fr)); gap:24px; margin-top:24px;">
+  <!-- Ethics Gate History -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">
+        <i data-lucide="check-check" class="nav-icon" style="color:var(--color-forest);"></i>
+        <span>Ethics Gate Human Decisions</span>
+      </div>
+      <a href="{{ url_for('gates', project_id=project.id) }}" class="btn btn-outline btn-sm">Gate Review</a>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      {% for g in gates %}
+      <div style="padding:12px; background:var(--color-cream-card); border-radius:var(--radius-md); border:1px solid var(--color-cream-border);">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <strong>Stage: {{ g.stage_name }}</strong>
+          {% if 'Proceed with Conditions' in g.decision %}
+            <span class="badge badge-gate-Conditions">{{ g.decision }}</span>
+          {% elif 'Proceed' in g.decision %}
+            <span class="badge badge-gate-Proceed">{{ g.decision }}</span>
+          {% elif 'Remediate' in g.decision %}
+            <span class="badge badge-gate-Remediate">{{ g.decision }}</span>
+          {% else %}
+            <span class="badge badge-gate-Stop">{{ g.decision }}</span>
+          {% endif %}
+        </div>
+        <p style="font-size:12px; margin-top:6px; color:var(--color-charcoal);">
+          {{ g.review_notes }}
+        </p>
+        {% if g.conditions %}
+          <div style="font-size:11.5px; color:var(--color-risk-mod); margin-top:4px;">
+            <strong>Condition:</strong> {{ g.conditions }}
+          </div>
+        {% endif %}
+        {% if g.required_actions %}
+          <div style="font-size:11.5px; color:var(--color-risk-crit); margin-top:4px;">
+            <strong>Required Remediation:</strong> {{ g.required_actions }}
+          </div>
+        {% endif %}
+        <div style="font-size:10.5px; color:var(--color-charcoal-muted); margin-top:6px;">
+          Reviewed by {{ g.reviewer_name }} ({{ g.reviewer_role }}) on {{ g.review_date }}
+        </div>
+      </div>
+      {% else %}
+      <p style="color:var(--color-charcoal-muted); font-size:13px;">No Ethics Gate reviews submitted yet for this project.</p>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Corrective Actions & Incidents Tracker -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">
+        <i data-lucide="clipboard-list" class="nav-icon" style="color:var(--color-forest);"></i>
+        <span>Corrective Actions & Monitoring</span>
+      </div>
+      <a href="{{ url_for('monitoring', project_id=project.id) }}" class="btn btn-outline btn-sm">Manage Audits</a>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      {% for a in actions %}
+      <div style="padding:12px; background:var(--color-cream-card); border-radius:var(--radius-md); border:1px solid var(--color-cream-border);">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <strong style="font-size:13px;">{{ a.action_title }}</strong>
+          <span class="badge {% if a.status == 'Verified & Closed' %}badge-gate-Proceed{% elif a.status == 'In Progress' %}badge-sage{% else %}badge-gate-Conditions{% endif %}">
+            {{ a.status }}
+          </span>
+        </div>
+        <p style="font-size:12px; color:var(--color-charcoal); margin-top:4px;">
+          {{ a.description }}
+        </p>
+        <div style="font-size:11px; color:var(--color-charcoal-muted); margin-top:4px;">
+          Assigned: {{ a.assigned_to }} &bull; Due: {{ a.due_date or 'TBD' }}
+        </div>
+      </div>
+      {% else %}
+      <p style="color:var(--color-charcoal-muted); font-size:13px;">No corrective actions open.</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- Edit Project Modal -->
+<div class="modal-backdrop" id="editProjectModal">
+  <div class="modal-dialog">
+    <form action="{{ url_for('edit_project', project_id=project.id) }}" method="POST">
+      <div class="modal-header">
+        <div class="modal-title">Edit Project Details</div>
+        <button type="button" class="modal-close-btn" onclick="closeModal('editProjectModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Project Name *</label>
+          <input type="text" name="name" class="form-control" value="{{ project.name }}" required>
+        </div>
+        <div class="form-row">
+          <div class="form-col">
+            <label class="form-label">Application Domain *</label>
+            <input type="text" name="domain" class="form-control" value="{{ project.domain }}" required>
+          </div>
+          <div class="form-col">
+            <label class="form-label">Development Team / Owner *</label>
+            <input type="text" name="owner" class="form-control" value="{{ project.owner }}" required>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-col">
+            <label class="form-label">Current SDLC Stage</label>
+            <select name="current_stage" class="form-select">
+              {% for s in ['Requirements', 'Design', 'Development', 'Testing', 'Deployment', 'Maintenance'] %}
+                <option value="{{ s }}" {% if project.current_stage == s %}selected{% endif %}>{{ s }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-col">
+            <label class="form-label">Status</label>
+            <select name="status" class="form-select">
+              {% for st in ['Active', 'In Gate Review', 'Remediating', 'Suspended', 'Completed'] %}
+                <option value="{{ st }}" {% if project.status == st %}selected{% endif %}>{{ st }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Scope & System Description</label>
+          <textarea name="description" class="form-control" rows="3">{{ project.description }}</textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" onclick="closeModal('editProjectModal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

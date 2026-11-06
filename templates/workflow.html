@@ -1,0 +1,246 @@
+{% extends 'base.html' %}
+{% block title %}SDLC Stages Workflow &bull; ETHIC-Loop{% endblock %}
+{% block page_title %}SDLC Ethical Stages Progression{% endblock %}
+
+{% block content %}
+<!-- Project Selector & Actions -->
+<div class="card" style="padding:16px 20px; margin-bottom:20px;">
+  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+    <div style="display:flex; align-items:center; gap:12px;">
+      <span style="font-weight:700; color:var(--color-forest);">Select Project:</span>
+      <form method="GET" action="{{ url_for('workflow') }}" id="projSelectForm">
+        <select name="project_id" class="form-select" onchange="document.getElementById('projSelectForm').submit()" style="width:320px; font-weight:600;">
+          {% for p in projects %}
+            <option value="{{ p.id }}" {% if p.id == project.id %}selected{% endif %}>
+              {{ p.name }} {% if p.is_demo %}(Demo){% endif %}
+            </option>
+          {% endfor %}
+        </select>
+      </form>
+    </div>
+
+    <div style="display:flex; gap:10px;">
+      <a href="{{ url_for('gates', project_id=project.id) }}" class="btn btn-primary btn-sm">
+        <i data-lucide="check-check" style="width:14px;height:14px;"></i> Initiate Ethics Gate Review
+      </a>
+      <a href="{{ url_for('export_pdf', project_id=project.id) }}" class="btn btn-outline-sage btn-sm">
+        <i data-lucide="file-text" style="width:14px;height:14px;"></i> Export Report
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- Visual 6-Stage Stepper -->
+<div class="card" style="padding: 24px 20px;">
+  <div class="workflow-stepper">
+    {% for s in stages %}
+      {% set is_active = (s.stage_name == project.current_stage) %}
+      {% set is_passed = (s.status == 'Passed Gate') %}
+      {% set is_remed = (s.status == 'Remediating') %}
+      <div class="step-item {% if is_passed %}passed{% elif is_remed %}remediating{% elif is_active %}active{% endif %}" onclick="showStageTab('stage_tab_{{ s.id }}', this)">
+        <div class="step-node">
+          {% if is_passed %}
+            <i data-lucide="check" style="width:18px;height:18px;stroke:var(--color-forest);"></i>
+          {% elif is_remed %}
+            <i data-lucide="rotate-ccw" style="width:18px;height:18px;stroke:var(--color-risk-crit);"></i>
+          {% else %}
+            {{ s.stage_order }}
+          {% endif %}
+        </div>
+        <div class="step-label">{{ s.stage_name }}</div>
+        <div class="step-status-tag">
+          {% if s.status == 'Passed Gate' %}
+            <span style="color:var(--color-risk-low); font-weight:700;">Passed</span>
+          {% elif s.status == 'Remediating' %}
+            <span style="color:var(--color-risk-crit); font-weight:700;">Remediating</span>
+          {% elif s.status == 'In Progress' %}
+            <span style="color:var(--color-forest); font-weight:700;">In Progress</span>
+          {% else %}
+            <span>{{ s.status }}</span>
+          {% endif %}
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Stage Details Container -->
+{% for s in stages %}
+  {% set is_active = (s.stage_name == project.current_stage) %}
+  <div class="stage-tab-content" id="stage_tab_{{ s.id }}" style="display: {% if is_active %}block{% else %}none{% endif %};">
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(440px, 1fr)); gap:24px;">
+      <!-- Stage Information & Checklists Form -->
+      <div class="card">
+        <form action="{{ url_for('save_stage', stage_id=s.id) }}" method="POST">
+          <div class="card-header">
+            <div class="card-title">
+              <i data-lucide="clipboard-check" class="nav-icon" style="color:var(--color-forest);"></i>
+              <span>Stage {{ s.stage_order }}: {{ s.stage_name }} &bull; Ethical Checkpoint</span>
+            </div>
+            <div>
+              {% if s.status == 'Passed Gate' %}
+                <span class="badge badge-gate-Proceed">{{ s.status }}</span>
+              {% elif s.status == 'Remediating' %}
+                <span class="badge badge-gate-Remediate">{{ s.status }}</span>
+              {% elif s.status == 'In Progress' %}
+                <span class="badge badge-sage">{{ s.status }}</span>
+              {% else %}
+                <span class="badge badge-cream">{{ s.status }}</span>
+              {% endif %}
+            </div>
+          </div>
+
+          <div style="background:var(--color-cream); border-radius:var(--radius-md); padding:12px; margin-bottom:16px; border:1px solid var(--color-cream-border);">
+            <div style="font-size:11px; font-weight:700; color:var(--color-charcoal-muted); text-transform:uppercase; letter-spacing:0.5px;">STAGE OBJECTIVE</div>
+            <p style="font-size:13px; color:var(--color-charcoal); margin-top:3px;">{{ s.description }}</p>
+            <div style="font-size:11px; font-weight:700; color:var(--color-forest); text-transform:uppercase; letter-spacing:0.5px; margin-top:8px;">ETHICAL MANDATE</div>
+            <p style="font-size:12.5px; color:var(--color-forest-dark); margin-top:2px;">{{ s.ethical_requirements }}</p>
+          </div>
+
+          <div class="form-row">
+            <div class="form-col">
+              <label class="form-label">Stage Reviewer / Ethical Lead</label>
+              <input type="text" name="assigned_reviewer" class="form-control" value="{{ s.assigned_reviewer or '' }}" placeholder="e.g. Lead Ethicist">
+            </div>
+            <div class="form-col">
+              <label class="form-label">Stage Status</label>
+              <select name="status" class="form-select">
+                <option value="Pending" {% if s.status == 'Pending' %}selected{% endif %}>Pending</option>
+                <option value="In Progress" {% if s.status == 'In Progress' %}selected{% endif %}>In Progress</option>
+                <option value="Gate Review Pending" {% if s.status == 'Gate Review Pending' %}selected{% endif %}>Gate Review Pending</option>
+                <option value="Passed Gate" {% if s.status == 'Passed Gate' %}selected{% endif %}>Passed Gate</option>
+                <option value="Remediating" {% if s.status == 'Remediating' %}selected{% endif %}>Remediating</option>
+                <option value="Blocked" {% if s.status == 'Blocked' %}selected{% endif %}>Blocked</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" style="font-size:13px; font-weight:700;">Mandatory Ethical SDLC Checklist</label>
+            <div style="background:#FFFFFF; border:1px solid var(--color-cream-border); border-radius:var(--radius-md); padding:8px 14px;">
+              {% for chk in s.checklists %}
+              <div class="checklist-item">
+                <input type="checkbox" name="chk_{{ chk.id }}" class="checklist-checkbox" id="chk_{{ s.id }}_{{ chk.id }}" {% if chk.done %}checked{% endif %}>
+                <label for="chk_{{ s.id }}_{{ chk.id }}" style="cursor:pointer; font-size:12.5px; color:var(--color-charcoal);">
+                  {{ chk.text }}
+                </label>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Evidence, Test Findings & Documentation Notes</label>
+            <textarea name="evidence_notes" class="form-control" rows="3" placeholder="Record verifiable testing results, stakeholder interviews, algorithmic fairness findings, or compliance certificates...">{{ s.evidence_notes or '' }}</textarea>
+          </div>
+
+          <div style="display:flex; justify-content:flex-end; gap:10px;">
+            <button type="submit" class="btn btn-primary btn-sm">
+              <i data-lucide="save" style="width:14px;height:14px;"></i> Save Stage Data
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Stage Risks & Gate Review History -->
+      <div>
+        <!-- Risks Linked to this Stage -->
+        <div class="card" style="margin-bottom:24px;">
+          <div class="card-header">
+            <div class="card-title">
+              <i data-lucide="shield-alert" class="nav-icon" style="color:var(--color-forest);"></i>
+              <span>Risks Identified in {{ s.stage_name }}</span>
+            </div>
+            <button type="button" class="btn btn-outline btn-sm" onclick="openModal('quickRiskModal')">
+              + Add Risk
+            </button>
+          </div>
+          {% set stage_risks = [] %}
+          {% for r in risks if r.stage_name == s.stage_name %}
+            {% set _ = stage_risks.append(r) %}
+          {% endfor %}
+
+          {% if stage_risks %}
+            <div style="display:flex; flex-direction:column; gap:10px;">
+              {% for r in stage_risks %}
+              <div style="padding:10px 14px; background:var(--color-cream-card); border-radius:var(--radius-md); border:1px solid var(--color-cream-border); display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                  <div style="font-size:13px; font-weight:700; color:var(--color-charcoal);">{{ r.title }}</div>
+                  <div style="font-size:11px; color:var(--color-charcoal-muted); margin-top:2px;">
+                    Pillar: <strong>{{ r.pillar }}</strong> &bull; Score: {{ r.likelihood }} &times; {{ r.impact }} = <strong>{{ r.risk_score }}</strong>
+                  </div>
+                </div>
+                <div>
+                  <span class="badge badge-risk-{{ r.severity }}">{{ r.severity }}</span>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <p style="font-size:12.5px; color:var(--color-charcoal-muted); padding:10px 0;">No risks logged specifically for the {{ s.stage_name }} stage.</p>
+          {% endif %}
+        </div>
+
+        <!-- Gate Decisions History for this Stage -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">
+              <i data-lucide="check-check" class="nav-icon" style="color:var(--color-forest);"></i>
+              <span>Ethics Gate Reviews for {{ s.stage_name }}</span>
+            </div>
+            <a href="{{ url_for('gates', project_id=project.id) }}" class="btn btn-secondary btn-sm">
+              Review Form
+            </a>
+          </div>
+
+          {% set stage_gates = [] %}
+          {% for g in gates if g.stage_name == s.stage_name %}
+            {% set _ = stage_gates.append(g) %}
+          {% endfor %}
+
+          {% if stage_gates %}
+            <div style="display:flex; flex-direction:column; gap:12px;">
+              {% for g in stage_gates %}
+              <div style="padding:12px; background:var(--color-cream-card); border-radius:var(--radius-md); border:1px solid var(--color-cream-border);">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <span style="font-size:12px; font-weight:700;">{{ g.review_date }}</span>
+                  <span class="badge {% if 'Proceed with Conditions' in g.decision %}badge-gate-Conditions{% elif 'Proceed' in g.decision %}badge-gate-Proceed{% elif 'Remediate' in g.decision %}badge-gate-Remediate{% else %}badge-gate-Stop{% endif %}">
+                    {{ g.decision }}
+                  </span>
+                </div>
+                <p style="font-size:12px; margin-top:6px; color:var(--color-charcoal);">{{ g.review_notes }}</p>
+                {% if g.conditions %}
+                  <div style="font-size:11.5px; color:var(--color-risk-mod); margin-top:4px;">
+                    <strong>Condition:</strong> {{ g.conditions }}
+                  </div>
+                {% endif %}
+                {% if g.required_actions %}
+                  <div style="font-size:11.5px; color:var(--color-risk-crit); margin-top:4px;">
+                    <strong>Action Required:</strong> {{ g.required_actions }}
+                  </div>
+                {% endif %}
+                <div style="font-size:11px; color:var(--color-charcoal-muted); margin-top:6px;">
+                  Reviewer: {{ g.reviewer_name }} ({{ g.reviewer_role }})
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <p style="font-size:12.5px; color:var(--color-charcoal-muted); padding:10px 0;">No gate reviews logged for this stage yet.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+{% endfor %}
+
+<script>
+  function showStageTab(tabId, el) {
+    document.querySelectorAll('.stage-tab-content').forEach(c => c.style.display = 'none');
+    document.querySelectorAll('.step-item').forEach(s => s.classList.remove('active'));
+    const target = document.getElementById(tabId);
+    if (target) target.style.display = 'block';
+    if (el) el.classList.add('active');
+  }
+</script>
+{% endblock %}

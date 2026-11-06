@@ -1,0 +1,212 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard &bull; ETHIC-Loop Framework{% endblock %}
+{% block page_title %}Ethical Governance Dashboard{% endblock %}
+
+{% block content %}
+<!-- Metric Cards Grid -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-icon">
+      <i data-lucide="folder-kanban" style="width:24px;height:24px;"></i>
+    </div>
+    <div class="stat-info">
+      <span class="stat-label">Total Projects</span>
+      <span class="stat-value">{{ total_projects }}</span>
+      <span class="stat-meta">Active SDLC Pipelines</span>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon icon-sage">
+      <i data-lucide="shield-alert" style="width:24px;height:24px;"></i>
+    </div>
+    <div class="stat-info">
+      <span class="stat-label">Total Identified Risks</span>
+      <span class="stat-value">{{ total_risks }}</span>
+      <span class="stat-meta">Across 5 Ethical Pillars</span>
+    </div>
+  </div>
+
+  <div class="stat-card stat-accent-danger">
+    <div class="stat-icon icon-danger">
+      <i data-lucide="alert-octagon" style="width:24px;height:24px;"></i>
+    </div>
+    <div class="stat-info">
+      <span class="stat-label">Open High & Critical</span>
+      <span class="stat-value" style="color:var(--color-risk-crit);">{{ open_high_risks }}</span>
+      <span class="stat-meta">Require Gate Remediation</span>
+    </div>
+  </div>
+
+  <div class="stat-card stat-accent-sage">
+    <div class="stat-icon icon-sage">
+      <i data-lucide="check-circle" style="width:24px;height:24px;"></i>
+    </div>
+    <div class="stat-info">
+      <span class="stat-label">Stages Passed Gate</span>
+      <span class="stat-value">{{ review_progress }}%</span>
+      <div class="progress-container" style="width:120px;">
+        <div class="progress-bar-fill" style="width: {{ review_progress }}%;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Ethics Gate Decision Summary Bar -->
+<div class="card" style="padding: 16px 20px;">
+  <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+    <div style="font-weight:700; color:var(--color-forest); display:flex; align-items:center; gap:8px;">
+      <i data-lucide="shield-check" class="nav-icon" style="color:var(--color-forest);"></i>
+      <span>Ethics Gate Human Decisions Breakdown:</span>
+    </div>
+    <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
+      <span class="badge badge-gate-Proceed">
+        <i data-lucide="check" style="width:12px;height:12px;"></i> Proceed: <strong>{{ gate_decisions['Proceed'] }}</strong>
+      </span>
+      <span class="badge badge-gate-Conditions">
+        <i data-lucide="alert-triangle" style="width:12px;height:12px;"></i> With Conditions: <strong>{{ gate_decisions['Proceed with Conditions'] }}</strong>
+      </span>
+      <span class="badge badge-gate-Remediate">
+        <i data-lucide="rotate-ccw" style="width:12px;height:12px;"></i> Remediate: <strong>{{ gate_decisions['Remediate'] }}</strong>
+      </span>
+      <span class="badge badge-gate-Stop">
+        <i data-lucide="x-octagon" style="width:12px;height:12px;"></i> Stop/Escalate: <strong>{{ gate_decisions['Stop or Escalate'] }}</strong>
+      </span>
+    </div>
+  </div>
+</div>
+
+<!-- Charts Grid -->
+<div class="charts-grid">
+  <!-- Chart 1: Lifecycle Stages Distribution -->
+  <div class="chart-card">
+    <div class="card-header">
+      <div class="card-title">
+        <i data-lucide="git-commit" class="nav-icon" style="color:var(--color-forest);"></i>
+        <span>Projects Grouped by Lifecycle Stage</span>
+      </div>
+      <a href="{{ url_for('workflow') }}" class="btn btn-outline-sage btn-sm">Inspect Stages</a>
+    </div>
+    <div class="chart-wrapper">
+      <canvas id="stageChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Chart 2: Risk Severity Distribution -->
+  <div class="chart-card">
+    <div class="card-header">
+      <div class="card-title">
+        <i data-lucide="pie-chart" class="nav-icon" style="color:var(--color-forest);"></i>
+        <span>Ethical Risk Severity Distribution (L &times; I)</span>
+      </div>
+      <a href="{{ url_for('risks') }}" class="btn btn-outline-sage btn-sm">Risk Matrix</a>
+    </div>
+    <div class="chart-wrapper">
+      <canvas id="sevChart"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- Bottom Section: Active Projects & Activity Log -->
+<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap:24px;">
+  <!-- Active Projects Table -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">
+        <i data-lucide="layers" class="nav-icon" style="color:var(--color-forest);"></i>
+        <span>Recent Development Pipelines</span>
+      </div>
+      <a href="{{ url_for('projects_list') }}" class="btn btn-outline btn-sm">All Projects</a>
+    </div>
+    <div class="table-responsive">
+      <table class="custom-table">
+        <thead>
+          <tr>
+            <th>Project Name</th>
+            <th>Domain</th>
+            <th>Stage</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in recent_projects %}
+          <tr>
+            <td>
+              <a href="{{ url_for('project_detail', project_id=p.id) }}" style="color:var(--color-forest);font-weight:700;text-decoration:none;">
+                {{ p.name }}
+              </a>
+              {% if p.is_demo %}
+                <span class="badge badge-demo" style="margin-left:4px;">Demo</span>
+              {% endif %}
+            </td>
+            <td style="color:var(--color-charcoal-muted);font-size:12px;">{{ p.domain }}</td>
+            <td>
+              <span class="badge badge-sage">{{ p.current_stage }}</span>
+            </td>
+            <td>
+              {% if p.status == 'Active' %}
+                <span class="badge badge-gate-Proceed">{{ p.status }}</span>
+              {% elif p.status == 'Remediating' %}
+                <span class="badge badge-gate-Remediate">{{ p.status }}</span>
+              {% elif p.status == 'In Gate Review' %}
+                <span class="badge badge-gate-Conditions">{{ p.status }}</span>
+              {% else %}
+                <span class="badge badge-cream">{{ p.status }}</span>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Recent Activities Audit Log -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">
+        <i data-lucide="history" class="nav-icon" style="color:var(--color-forest);"></i>
+        <span>Ethical Audit & Activity Log</span>
+      </div>
+      <span style="font-size:11px; color:var(--color-charcoal-muted);">Real-time DB records</span>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:12px;">
+      {% for act in recent_activities %}
+      <div style="display:flex; align-items:flex-start; gap:12px; padding-bottom:10px; border-bottom:1px solid var(--color-cream-border);">
+        <div style="width:28px; height:28px; border-radius:50%; background:var(--color-sage-light); color:var(--color-forest); display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:11px; font-weight:bold;">
+          {% if 'GATE' in act.action_type %}G
+          {% elif 'RISK' in act.action_type %}R
+          {% elif 'PROJECT' in act.action_type %}P
+          {% elif 'STAGE' in act.action_type %}S
+          {% else %}A{% endif %}
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:12.5px; font-weight:600; color:var(--color-charcoal);">
+            {{ act.description }}
+          </div>
+          <div style="font-size:11px; color:var(--color-charcoal-muted); margin-top:2px;">
+            <span>{{ act.timestamp }}</span>
+            {% if act.project_name %}
+              &bull; <span style="color:var(--color-forest);font-weight:600;">{{ act.project_name }}</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const stageLabels = {{ stage_labels|tojson }};
+    const stageCounts = {{ stage_counts|tojson }};
+    const sevLabels = {{ sev_labels|tojson }};
+    const sevCounts = {{ sev_counts|tojson }};
+    initDashboardCharts(stageLabels, stageCounts, sevLabels, sevCounts);
+  });
+</script>
+{% endblock %}

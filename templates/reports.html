@@ -1,0 +1,285 @@
+{% extends 'base.html' %}
+{% block title %}Reports & Audits &bull; ETHIC-Loop{% endblock %}
+{% block page_title %}Ethical Project Audit Report & Export Center{% endblock %}
+
+{% block content %}
+<!-- Project Selector & Export Buttons -->
+<div class="card" style="padding:16px 20px; margin-bottom:20px;">
+  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+    <div style="display:flex; align-items:center; gap:12px;">
+      <span style="font-weight:700; color:var(--color-forest);">Select Project:</span>
+      <form method="GET" action="{{ url_for('reports') }}" id="reportProjForm">
+        <select name="project_id" class="form-select" onchange="document.getElementById('reportProjForm').submit()" style="width:320px; font-weight:600;">
+          {% for p in projects %}
+            <option value="{{ p.id }}" {% if p.id == project.id %}selected{% endif %}>
+              {{ p.name }} {% if p.is_demo %}(Demo){% endif %}
+            </option>
+          {% endfor %}
+        </select>
+      </form>
+    </div>
+
+    <!-- Download Buttons -->
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      <button class="btn btn-outline" onclick="window.print()">
+        <i data-lucide="printer" style="width:14px;height:14px;"></i> Print View
+      </button>
+      <a href="{{ url_for('export_csv', project_id=project.id, type='risks') }}" class="btn btn-outline-sage">
+        <i data-lucide="file-spreadsheet" style="width:14px;height:14px;"></i> Export Risks CSV
+      </a>
+      <a href="{{ url_for('export_csv', project_id=project.id, type='summary') }}" class="btn btn-outline-sage">
+        <i data-lucide="table" style="width:14px;height:14px;"></i> Export Summary CSV
+      </a>
+      <a href="{{ url_for('export_pdf', project_id=project.id) }}" class="btn btn-primary">
+        <i data-lucide="download" style="width:14px;height:14px;"></i> Download Official PDF Report
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- On-Screen Report Preview -->
+<div class="card" style="padding:32px; background:#FFFFFF; border:2px solid var(--color-sage-light); box-shadow:var(--shadow-md);">
+  <!-- Document Header -->
+  <div style="display:flex; justify-content:space-between; align-items:flex-start; border-bottom:2px solid var(--color-forest); padding-bottom:16px; margin-bottom:20px;">
+    <div>
+      <div style="font-size:24px; font-weight:800; color:var(--color-forest);">ETHIC-Loop Framework Audit Report</div>
+      <div style="font-size:13px; color:var(--color-charcoal-muted); margin-top:4px;">
+        Comprehensive Lifecycle Ethics Verification &bull; Generated from live database records
+      </div>
+    </div>
+    <div style="text-align:right;">
+      <div class="badge badge-forest" style="font-size:12px; padding:4px 10px;">Official Audit Copy</div>
+      <div style="font-size:11px; color:var(--color-charcoal-muted); margin-top:4px;">Date: {{ project.created_at[:10] }}</div>
+    </div>
+  </div>
+
+  <!-- Academic Disclaimer Banner -->
+  <div style="background:var(--color-cream); border:1px solid var(--color-sage); border-radius:var(--radius-md); padding:12px 16px; margin-bottom:24px; font-size:12px; color:var(--color-charcoal); line-height:1.5;">
+    <strong>ACADEMIC CONCEPTUAL FRAMEWORK NOTICE:</strong>
+    ETHIC-Loop is a proposed conceptual framework for Computer Ethics research and software engineering education.
+    It is not an established international standard or an empirically validated methodology.
+    A passing gate review or low mathematical risk score reflects internal procedural compliance and does not eliminate moral ambiguity or legal risk.
+  </div>
+
+  <!-- Section 1: Project Information -->
+  <h2 style="font-size:16px; color:var(--color-forest); border-bottom:1px solid var(--color-cream-border); padding-bottom:6px; margin-bottom:14px;">
+    1. Project Metadata & Governance Scope
+  </h2>
+  <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:16px; margin-bottom:24px; background:var(--color-cream-card); padding:16px; border-radius:var(--radius-md);">
+    <div>
+      <span style="font-size:11px; font-weight:700; color:var(--color-charcoal-muted); text-transform:uppercase;">PROJECT NAME</span>
+      <div style="font-size:14px; font-weight:700; color:var(--color-forest); margin-top:2px;">{{ project.name }}</div>
+    </div>
+    <div>
+      <span style="font-size:11px; font-weight:700; color:var(--color-charcoal-muted); text-transform:uppercase;">DOMAIN</span>
+      <div style="font-size:13.5px; font-weight:600; margin-top:2px;">{{ project.domain }}</div>
+    </div>
+    <div>
+      <span style="font-size:11px; font-weight:700; color:var(--color-charcoal-muted); text-transform:uppercase;">DEVELOPMENT LEAD</span>
+      <div style="font-size:13.5px; margin-top:2px;">{{ project.owner }}</div>
+    </div>
+    <div>
+      <span style="font-size:11px; font-weight:700; color:var(--color-charcoal-muted); text-transform:uppercase;">CURRENT STAGE</span>
+      <div style="margin-top:2px;"><span class="badge badge-sage">{{ project.current_stage }}</span></div>
+    </div>
+    <div style="grid-column: 1 / -1;">
+      <span style="font-size:11px; font-weight:700; color:var(--color-charcoal-muted); text-transform:uppercase;">SYSTEM SCOPE / DESCRIPTION</span>
+      <div style="font-size:13px; color:var(--color-charcoal); margin-top:3px;">{{ project.description }}</div>
+    </div>
+  </div>
+
+  <!-- Section 2: SDLC Stages Progression -->
+  <h2 style="font-size:16px; color:var(--color-forest); border-bottom:1px solid var(--color-cream-border); padding-bottom:6px; margin-bottom:14px;">
+    2. SDLC Ethical Stages Progression & Signoff
+  </h2>
+  <div class="table-responsive" style="margin-bottom:24px;">
+    <table class="custom-table">
+      <thead>
+        <tr>
+          <th>Stage # & Name</th>
+          <th>Status</th>
+          <th>Lead / Reviewer</th>
+          <th>Evidence & Findings Summary</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for s in stages %}
+        <tr>
+          <td><strong>{{ s.stage_order }}. {{ s.stage_name }}</strong></td>
+          <td>
+            <span class="badge {% if s.status == 'Passed Gate' %}badge-gate-Proceed{% elif s.status == 'Remediating' %}badge-gate-Remediate{% else %}badge-sage{% endif %}">
+              {{ s.status }}
+            </span>
+          </td>
+          <td>{{ s.assigned_reviewer or 'Unassigned' }}</td>
+          <td style="font-size:12px;">{{ s.evidence_notes or 'Pending review documentation.' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Section 3: Five Pillars Status -->
+  <h2 style="font-size:16px; color:var(--color-forest); border-bottom:1px solid var(--color-cream-border); padding-bottom:6px; margin-bottom:14px;">
+    3. Five-Pillar Assessment (E-T-H-I-C)
+  </h2>
+  <div class="table-responsive" style="margin-bottom:24px;">
+    <table class="custom-table">
+      <thead>
+        <tr>
+          <th>Pillar Code & Name</th>
+          <th>Status</th>
+          <th>Core Objective</th>
+          <th>Evidence Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in pillars %}
+        <tr>
+          <td><strong>[{{ p.pillar_code }}] {{ p.pillar_name }}</strong></td>
+          <td>
+            <span class="badge {% if p.status == 'Completed' %}badge-gate-Proceed{% elif p.status == 'In Progress' %}badge-sage{% else %}badge-cream{% endif %}">
+              {{ p.status }}
+            </span>
+          </td>
+          <td style="font-size:12px;">{{ p.purpose }}</td>
+          <td style="font-size:12px;">{{ p.evidence_notes or 'N/A' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Section 4: Risk Register -->
+  <h2 style="font-size:16px; color:var(--color-forest); border-bottom:1px solid var(--color-cream-border); padding-bottom:6px; margin-bottom:14px;">
+    4. Ethical Risk Register & Scores (Likelihood &times; Impact)
+  </h2>
+  <div class="table-responsive" style="margin-bottom:24px;">
+    <table class="custom-table">
+      <thead>
+        <tr>
+          <th>Title & Category</th>
+          <th>Stage</th>
+          <th>Pillar</th>
+          <th>L &times; I</th>
+          <th>Severity</th>
+          <th>Mitigation Plan</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in risks %}
+        <tr>
+          <td>
+            <strong>{{ r.title }}</strong>
+            <div style="font-size:10.5px; color:var(--color-charcoal-muted);">{{ r.category }}</div>
+          </td>
+          <td>{{ r.stage_name }}</td>
+          <td>{{ r.pillar }}</td>
+          <td>{{ r.likelihood }} &times; {{ r.impact }} = <strong>{{ r.risk_score }}</strong></td>
+          <td><span class="badge badge-risk-{{ r.severity }}">{{ r.severity }}</span></td>
+          <td style="font-size:12px; max-width:240px;">{{ r.mitigation_strategy }}</td>
+          <td><span class="badge badge-cream">{{ r.status }}</span></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7" style="text-align:center;">No risks recorded.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Section 5: Ethics Gate Reviews -->
+  <h2 style="font-size:16px; color:var(--color-forest); border-bottom:1px solid var(--color-cream-border); padding-bottom:6px; margin-bottom:14px;">
+    5. Ethics Gate Official Decisions & Human Deliberation History
+  </h2>
+  <div class="table-responsive" style="margin-bottom:24px;">
+    <table class="custom-table">
+      <thead>
+        <tr>
+          <th>Stage & Date</th>
+          <th>Reviewer & Role</th>
+          <th>Gate Decision</th>
+          <th>Findings & Mandated Corrective Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for g in gates %}
+        <tr>
+          <td>
+            <strong>{{ g.stage_name }}</strong>
+            <div style="font-size:10.5px; color:var(--color-charcoal-muted);">{{ g.review_date }}</div>
+          </td>
+          <td>
+            <strong>{{ g.reviewer_name }}</strong>
+            <div style="font-size:11px; color:var(--color-charcoal-muted);">{{ g.reviewer_role }}</div>
+          </td>
+          <td>
+            <span class="badge {% if 'Proceed with Conditions' in g.decision %}badge-gate-Conditions{% elif 'Proceed' in g.decision %}badge-gate-Proceed{% elif 'Remediate' in g.decision %}badge-gate-Remediate{% else %}badge-gate-Stop{% endif %}">
+              {{ g.decision }}
+            </span>
+          </td>
+          <td style="font-size:12px;">
+            <div><strong>Notes:</strong> {{ g.review_notes }}</div>
+            {% if g.conditions %}
+              <div style="color:var(--color-risk-mod); margin-top:2px;"><strong>Conditions:</strong> {{ g.conditions }}</div>
+            {% endif %}
+            {% if g.required_actions %}
+              <div style="color:var(--color-risk-crit); margin-top:2px;"><strong>Actions:</strong> {{ g.required_actions }} (Owner: {{ g.action_owner or 'Unassigned' }})</div>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" style="text-align:center;">No gate reviews logged yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Section 6: Corrective Actions & Monitoring Incidents -->
+  <h2 style="font-size:16px; color:var(--color-forest); border-bottom:1px solid var(--color-cream-border); padding-bottom:6px; margin-bottom:14px;">
+    6. Open Corrective Actions & Post-Deployment Monitoring
+  </h2>
+  <div class="table-responsive">
+    <table class="custom-table">
+      <thead>
+        <tr>
+          <th>Item Title & Narrative</th>
+          <th>Type</th>
+          <th>Responsible / Reporter</th>
+          <th>Status</th>
+          <th>Resolution Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in actions %}
+        <tr>
+          <td>
+            <strong>{{ a.action_title }}</strong>
+            <div style="font-size:11.5px; color:var(--color-charcoal-light);">{{ a.description }}</div>
+          </td>
+          <td><span class="badge badge-sage">Corrective Action</span></td>
+          <td>{{ a.assigned_to }} (Due: {{ a.due_date or 'N/A' }})</td>
+          <td><span class="badge badge-cream">{{ a.status }}</span></td>
+          <td style="font-size:12px;">{{ a.resolution_notes or 'Pending verification' }}</td>
+        </tr>
+        {% endfor %}
+        {% for inc in incidents %}
+        <tr>
+          <td>
+            <strong>{{ inc.title }}</strong>
+            <div style="font-size:11.5px; color:var(--color-charcoal-light);">{{ inc.description }}</div>
+          </td>
+          <td><span class="badge badge-risk-{{ inc.severity }}">Incident ({{ inc.severity }})</span></td>
+          <td>{{ inc.reported_by }} ({{ inc.date_reported }})</td>
+          <td><span class="badge badge-cream">{{ inc.status }}</span></td>
+          <td style="font-size:12px;">{{ inc.remediation_notes or 'Investigation ongoing' }}</td>
+        </tr>
+        {% endfor %}
+        {% if not actions and not incidents %}
+        <tr><td colspan="5" style="text-align:center;">No active corrective actions or incidents.</td></tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,166 @@
+{% extends 'base.html' %}
+{% block title %}Projects &bull; ETHIC-Loop Framework{% endblock %}
+{% block page_title %}Project Management & Pipelines{% endblock %}
+
+{% block content %}
+<div class="card" style="padding:16px 20px; margin-bottom:20px;">
+  <form method="GET" action="{{ url_for('projects_list') }}" style="display:flex; flex-wrap:wrap; gap:12px; align-items:center; justify-content:space-between;">
+    <div style="display:flex; gap:12px; flex-wrap:wrap; flex:1;">
+      <div style="flex:1; min-width:200px;">
+        <input type="text" name="q" value="{{ search }}" class="form-control" placeholder="Search by project name, description or owner...">
+      </div>
+      <div style="width:160px;">
+        <select name="domain" class="form-select">
+          <option value="">All Domains</option>
+          {% for d in domains %}
+            <option value="{{ d.domain }}" {% if domain_filter == d.domain %}selected{% endif %}>{{ d.domain }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div style="width:150px;">
+        <select name="stage" class="form-select">
+          <option value="">All Stages</option>
+          <option value="Requirements" {% if stage_filter == 'Requirements' %}selected{% endif %}>1. Requirements</option>
+          <option value="Design" {% if stage_filter == 'Design' %}selected{% endif %}>2. Design</option>
+          <option value="Development" {% if stage_filter == 'Development' %}selected{% endif %}>3. Development</option>
+          <option value="Testing" {% if stage_filter == 'Testing' %}selected{% endif %}>4. Testing</option>
+          <option value="Deployment" {% if stage_filter == 'Deployment' %}selected{% endif %}>5. Deployment</option>
+          <option value="Maintenance" {% if stage_filter == 'Maintenance' %}selected{% endif %}>6. Maintenance</option>
+        </select>
+      </div>
+      <div style="width:140px;">
+        <select name="status" class="form-select">
+          <option value="">All Statuses</option>
+          <option value="Active" {% if status_filter == 'Active' %}selected{% endif %}>Active</option>
+          <option value="Remediating" {% if status_filter == 'Remediating' %}selected{% endif %}>Remediating</option>
+          <option value="In Gate Review" {% if status_filter == 'In Gate Review' %}selected{% endif %}>In Gate Review</option>
+          <option value="Suspended" {% if status_filter == 'Suspended' %}selected{% endif %}>Suspended</option>
+        </select>
+      </div>
+    </div>
+    <div style="display:flex; gap:8px;">
+      <button type="submit" class="btn btn-outline btn-sm">Filter</button>
+      <a href="{{ url_for('projects_list') }}" class="btn btn-outline-sage btn-sm">Reset</a>
+      <button type="button" class="btn btn-primary btn-sm" onclick="openModal('quickProjectModal')">
+        <i data-lucide="plus" style="width:14px;height:14px;"></i> New Project
+      </button>
+    </div>
+  </form>
+</div>
+
+<!-- Projects Table -->
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">
+      <i data-lucide="folder" class="nav-icon" style="color:var(--color-forest);"></i>
+      <span>Active Ethical Framework Projects ({{ projects|length }})</span>
+    </div>
+  </div>
+
+  <div class="table-responsive">
+    <table class="custom-table">
+      <thead>
+        <tr>
+          <th>Project Name & Description</th>
+          <th>Domain</th>
+          <th>Owner / Lead</th>
+          <th>Current SDLC Stage</th>
+          <th>Risks / Incidents</th>
+          <th>Status</th>
+          <th style="text-align:right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in projects %}
+        <tr>
+          <td style="max-width:280px;">
+            <div style="display:flex; align-items:center; gap:6px;">
+              <a href="{{ url_for('project_detail', project_id=p.id) }}" style="font-size:14px; font-weight:700; color:var(--color-forest); text-decoration:none;">
+                {{ p.name }}
+              </a>
+              {% if p.is_demo %}
+                <span class="badge badge-demo">Demonstration Data</span>
+              {% endif %}
+            </div>
+            <div style="font-size:11.5px; color:var(--color-charcoal-muted); margin-top:3px; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">
+              {{ p.description or 'No description provided.' }}
+            </div>
+          </td>
+          <td>
+            <span style="font-size:12px; font-weight:500;">{{ p.domain }}</span>
+          </td>
+          <td>
+            <span style="font-size:12px;">{{ p.owner }}</span>
+          </td>
+          <td>
+            <span class="badge badge-sage">
+              {{ p.current_stage }}
+            </span>
+          </td>
+          <td>
+            <div style="font-size:12px;">
+              <span style="color:var(--color-risk-crit); font-weight:700;">{{ p.risk_count }}</span> risks &bull;
+              <span>{{ p.incident_count }}</span> incidents
+            </div>
+          </td>
+          <td>
+            {% if p.status == 'Active' %}
+              <span class="badge badge-gate-Proceed">{{ p.status }}</span>
+            {% elif p.status == 'Remediating' %}
+              <span class="badge badge-gate-Remediate">{{ p.status }}</span>
+            {% elif p.status == 'In Gate Review' %}
+              <span class="badge badge-gate-Conditions">{{ p.status }}</span>
+            {% else %}
+              <span class="badge badge-cream">{{ p.status }}</span>
+            {% endif %}
+          </td>
+          <td style="text-align:right; white-space:nowrap;">
+            <a href="{{ url_for('project_detail', project_id=p.id) }}" class="btn btn-outline btn-sm" title="View Project Overview">
+              <i data-lucide="eye" style="width:13px;height:13px;"></i> View
+            </a>
+            <a href="{{ url_for('workflow', project_id=p.id) }}" class="btn btn-outline-sage btn-sm" title="Go to Workflow">
+              <i data-lucide="git-merge" style="width:13px;height:13px;"></i> SDLC
+            </a>
+            <button class="btn btn-outline btn-sm" onclick="openDeleteModal({{ p.id }}, '{{ p.name }}')" style="color:var(--color-risk-crit);border-color:#fca5a5;">
+              <i data-lucide="trash-2" style="width:13px;height:13px;"></i>
+            </button>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal-backdrop" id="deleteProjectModal">
+  <div class="modal-dialog" style="max-width:450px;">
+    <form id="deleteProjectForm" method="POST" action="">
+      <div class="modal-header" style="background:var(--color-risk-crit);">
+        <div class="modal-title">Confirm Project Deletion</div>
+        <button type="button" class="modal-close-btn" onclick="closeModal('deleteProjectModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p style="font-size:13.5px; color:var(--color-charcoal);">
+          Are you sure you want to permanently delete <strong id="deleteProjectName"></strong>?
+        </p>
+        <p style="font-size:12px; color:var(--color-risk-crit); margin-top:8px;">
+          This will purge all associated ethical risks, SDLC stage checklists, Ethics Gate audit history, and incidents. This operation cannot be undone.
+        </p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" onclick="closeModal('deleteProjectModal')">Cancel</button>
+        <button type="submit" class="btn btn-danger">Yes, Delete Project</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  function openDeleteModal(projectId, projectName) {
+    document.getElementById('deleteProjectName').innerText = projectName;
+    document.getElementById('deleteProjectForm').action = '/projects/' + projectId + '/delete';
+    openModal('deleteProjectModal');
+  }
+</script>
+{% endblock %}

@@ -1,0 +1,328 @@
+{% extends 'base.html' %}
+{% block title %}AI Resume Screening Verification &bull; ETHIC-Loop{% endblock %}
+{% block page_title %}AI Recruitment & Resume Screening Verification{% endblock %}
+
+{% block content %}
+<!-- Academic Demonstration Banner Header -->
+<div class="card demo-scenario-card" style="border: 2px solid var(--color-sage); background: #FAF9F2;">
+  <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:16px;">
+    <div>
+      <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+        <span class="badge badge-demo">ACADEMIC DEMONSTRATION SCENARIO</span>
+        <span class="badge badge-forest">9-Step Ethical Verification Workflow</span>
+        <span class="badge badge-sage">AI Resume Screening</span>
+      </div>
+      <h1 style="font-size:22px; color:var(--color-forest); margin-top:8px;">
+        AI Recruitment &amp; Resume Screening Verification
+      </h1>
+      <p style="font-size:13.5px; color:var(--color-charcoal); max-width:860px; margin-top:6px; line-height:1.55;">
+        This demonstration illustrates how the <strong>ETHIC-Loop Framework</strong> is applied to verify whether an automated recruitment pipeline incorporates appropriate ethical safeguards.
+        The scenario walks through resume screening assessment, risk identification, formal human gate deliberation (<em>Remediate and Review Again</em>),
+        mandated corrective actions, empirical retest verification, final gate review, and verification report generation.
+      </p>
+    </div>
+
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      <button class="btn btn-outline btn-sm" onclick="resetDemoScenario({{ project.id }})" title="Reset scenario to initial Remediating state">
+        <i data-lucide="rotate-ccw" style="width:14px;height:14px;"></i> Reset Demo State
+      </button>
+      <a href="{{ url_for('project_detail', project_id=project.id) }}" class="btn btn-primary btn-sm">
+        <i data-lucide="eye" style="width:14px;height:14px;"></i> View Project Hub
+      </a>
+    </div>
+  </div>
+
+  <!-- Academic Boundary Notice -->
+  <div style="margin-top:14px; padding:10px 14px; background:#FFFFFF; border-left:4px solid var(--color-sage-dark); border-radius:4px; font-size:12px; color:var(--color-charcoal-light); line-height:1.45;">
+    <strong>Verification Scope &amp; Methodology Disclaimer:</strong>
+    All candidate profiles and metric traces below are <em>simulated sample data</em> for conceptual demonstration.
+    ETHIC-Loop structures human ethical verification; it does not claim to verify a candidate's real identity, guarantee that a resume is genuine, or mechanically certify an AI model as unbiased. Ongoing empirical testing and multi-stakeholder participation remain essential.
+  </div>
+</div>
+
+<!-- 9-Step Ethical Verification Workflow Layout -->
+<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(460px, 1fr)); gap:24px;">
+
+  <!-- LEFT COLUMN: Steps 1 through 5 -->
+  <div>
+    <!-- STEP 1: Project Overview -->
+    <div class="scenario-step-box completed">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <strong style="color:var(--color-forest); font-size:14px;">
+          1. Project Overview &mdash; AI Recruitment System
+        </strong>
+        <span class="badge badge-gate-Proceed">Verified Scope</span>
+      </div>
+      <p style="font-size:12.5px; color:var(--color-charcoal); margin-top:6px; line-height:1.5;">
+        <strong>System Target:</strong> Automated applicant ranking and resume parsing pipeline deployed for enterprise talent acquisition.
+        Uses NLP vector embeddings, text feature extraction, and historical hiring dataset correlations to rank applicant pools.
+      </p>
+      <div style="display:flex; gap:16px; margin-top:8px; font-size:11.5px; color:var(--color-charcoal-muted); flex-wrap:wrap;">
+        <span>Domain: <strong>{{ project.domain }}</strong></span>
+        <span>Lead: <strong>{{ project.owner }}</strong></span>
+        <span>SDLC Pipeline: <strong>6 Stages Initialized</strong></span>
+      </div>
+      <div style="margin-top:10px;">
+        <a href="{{ url_for('project_detail', project_id=project.id) }}" class="btn btn-outline-sage btn-sm">
+          <i data-lucide="folder" style="width:13px;height:13px;"></i> View Project Overview Hub &rarr;
+        </a>
+      </div>
+    </div>
+
+    <!-- STEP 2: Resume Screening Assessment -->
+    <div class="scenario-step-box completed">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <strong style="color:var(--color-forest); font-size:14px;">
+          2. Resume Screening Assessment &mdash; Intake &amp; Scoring Logic
+        </strong>
+        <span class="badge badge-sage">Technical Audit</span>
+      </div>
+      <p style="font-size:12.5px; color:var(--color-charcoal); margin-top:6px; line-height:1.5;">
+        Ethical verification of the resume screening pipeline examined three core architectural stages:
+      </p>
+      <div style="background:#FFFFFF; border:1px solid var(--color-cream-border); border-radius:6px; padding:10px 12px; margin:8px 0; font-size:12px; display:flex; flex-direction:column; gap:6px;">
+        <div>
+          <strong style="color:var(--color-forest);">A. Ingestion &amp; Data Fields:</strong>
+          PDF/Word resume text extraction parsing prior job titles, tenure length, technical keywords, and university credentials.
+        </div>
+        <div>
+          <strong style="color:var(--color-forest);">B. Shortlisting Decision Model:</strong>
+          Dense vector embeddings calculate cosine similarity against a benchmark "ideal candidate" profile vector, filtering applicants below the 75th percentile.
+        </div>
+        <div>
+          <strong style="color:var(--color-forest);">C. Ethical Verification Concern:</strong>
+          Systemic risk that historical hiring data over-indexes on male candidate profiles from selective institutions, unintentionally penalizing non-traditional cohorts.
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--color-charcoal-muted);">
+        <em>Status: Architectural workflows and candidate data touchpoints documented for risk review.</em>
+      </div>
+    </div>
+
+    <!-- STEP 3: Ethical Risk Identification -->
+    <div class="scenario-step-box completed">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <strong style="color:var(--color-forest); font-size:14px;">
+          3. Ethical Risk Identification &mdash; 5 Key Vulnerabilities
+        </strong>
+        <span class="badge badge-sage">5 Risks Mapped</span>
+      </div>
+      <p style="font-size:12.5px; color:var(--color-charcoal); margin-top:6px; line-height:1.5;">
+        The team identified and logged five concrete ethical risks across the SDLC:
+      </p>
+      <div style="display:flex; flex-direction:column; gap:6px; margin-top:8px;">
+        <div style="background:#FFFFFF; border:1px solid var(--color-cream-border); padding:6px 10px; border-radius:4px; font-size:12px; display:flex; justify-content:space-between; align-items:center;">
+          <span><strong>1. Biased candidate screening</strong> &bull; Training data demographic skew</span>
+          <span class="badge badge-risk-Critical">Critical</span>
+        </div>
+        <div style="background:#FFFFFF; border:1px solid var(--color-cream-border); padding:6px 10px; border-radius:4px; font-size:12px; display:flex; justify-content:space-between; align-items:center;">
+          <span><strong>2. Unauthorized access to personal data</strong> &bull; Unredacted PII in vectors</span>
+          <span class="badge badge-risk-High">High</span>
+        </div>
+        <div style="background:#FFFFFF; border:1px solid var(--color-cream-border); padding:6px 10px; border-radius:4px; font-size:12px; display:flex; justify-content:space-between; align-items:center;">
+          <span><strong>3. Lack of decision transparency</strong> &bull; Black-box rejection without reasons</span>
+          <span class="badge badge-risk-High">High</span>
+        </div>
+        <div style="background:#FFFFFF; border:1px solid var(--color-cream-border); padding:6px 10px; border-radius:4px; font-size:12px; display:flex; justify-content:space-between; align-items:center;">
+          <span><strong>4. Insufficient human review</strong> &bull; Recruiter automation complacency</span>
+          <span class="badge badge-risk-High">High</span>
+        </div>
+        <div style="background:#FFFFFF; border:1px solid var(--color-cream-border); padding:6px 10px; border-radius:4px; font-size:12px; display:flex; justify-content:space-between; align-items:center;">
+          <span><strong>5. Accessibility barriers</strong> &bull; Applicant portal non-WCAG compliance</span>
+          <span class="badge badge-risk-Moderate">Moderate</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 4: Risk Assessment -->
+    <div class="scenario-step-box completed">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <strong style="color:var(--color-forest); font-size:14px;">
+          4. Fairness Risk Assessment &mdash; Score 20 (Critical)
+        </strong>
+        <span class="badge badge-risk-Critical">L=4 &times; I=5 = 20</span>
+      </div>
+      <p style="font-size:12.5px; color:var(--color-charcoal); margin-top:6px; line-height:1.5;">
+        Applying the ETHIC-Loop dual-dimensional heuristic formula:
+      </p>
+      <div style="background:var(--color-risk-crit-bg); border:1px solid #fca5a5; border-radius:6px; padding:10px 14px; margin:8px 0; color:#7f1d1d; font-size:12px;">
+        <div style="font-weight:700; font-size:13px;">
+          Biased Candidate Resume Screening against Protected Demographics
+        </div>
+        <div style="margin-top:4px;">
+          Likelihood: <strong>4 (Frequent/High probability)</strong> &times; Impact: <strong>5 (Severe livelihood harm)</strong> = <strong>Score: 20</strong>
+        </div>
+        <div style="margin-top:4px; font-size:11px;">
+          <strong>Heuristic Classification:</strong> Critical (Threshold: 17–25).
+          <em>Under ETHIC-Loop rules, a Critical severity risk blocks automatic deployment and mandates human gatekeeper deliberation.</em>
+        </div>
+      </div>
+      <div style="margin-top:8px;">
+        <a href="{{ url_for('risks', project_id=project.id) }}" class="btn btn-outline-sage btn-sm">
+          <i data-lucide="grid" style="width:13px;height:13px;"></i> Inspect in 5&times;5 Risk Matrix &rarr;
+        </a>
+      </div>
+    </div>
+
+    <!-- STEP 5: Ethics Gate Review (Initial: Remediate) -->
+    <div class="scenario-step-box completed">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <strong style="color:var(--color-forest); font-size:14px;">
+          5. Ethics Gate Review &mdash; Decision: Remediate and Review Again
+        </strong>
+        <span class="badge badge-gate-Remediate">Decision: Remediate</span>
+      </div>
+      <p style="font-size:12.5px; color:var(--color-charcoal); margin-top:6px; line-height:1.5;">
+        At the <strong>Testing Stage Checkpoint</strong>, Lead Compliance Officer Dr. Sarah Lin evaluated initial test evidence.
+        Disparate impact ratio audit run #104 revealed a <strong>0.61 selection rate for female applicants</strong> compared to the baseline cohort (statistically significant violation of four-fifths rule).
+      </p>
+      <div style="background:#fff7ed; border-left:4px solid var(--color-risk-crit); padding:8px 12px; margin:8px 0; font-size:12px; color:#9a3412;">
+        <strong>Official Gate Finding:</strong>
+        <em>"Project cannot proceed to Deployment. Low error rates on validation loss do not substitute for non-discrimination obligations. Remediate and Review Again."</em>
+      </div>
+      <div style="font-size:11px; color:var(--color-charcoal-muted);">
+        Stage status locked to: <strong style="color:var(--color-risk-crit);">Remediating</strong> (Deployment blocked).
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT COLUMN: Steps 6 through 9 -->
+  <div>
+    <!-- STEP 6: Corrective Action -->
+    <div class="scenario-step-box completed">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <strong style="color:var(--color-forest); font-size:14px;">
+          6. Corrective Actions Mandated
+        </strong>
+        <span class="badge badge-sage">Assigned to ML Lead</span>
+      </div>
+      <p style="font-size:12.5px; color:var(--color-charcoal); margin-top:6px; line-height:1.5;">
+        The Ethics Gate mandated a binding Corrective Action plan assigned to ML Engineer Kevin Chen:
+      </p>
+      <div style="background:#FFFFFF; border:1px solid var(--color-cream-border); border-radius:6px; padding:10px 12px; margin:8px 0; font-size:12px;">
+        <div style="font-weight:700; color:var(--color-forest);">
+          Task: Demographic Parity Retraining &amp; Disparate Impact Audit
+        </div>
+        <div style="margin-top:4px; color:var(--color-charcoal);">
+          1. Examine 2018–2024 historical training resumes for gender, graduation cohort, and university bias.<br>
+          2. Strip non-predictive proxy signals (e.g., gendered extracurriculars, high school locations).<br>
+          3. Apply algorithmic re-weighting with Fairlearn to equalize pass rates.<br>
+          4. Submit documented empirical retest findings.
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 7: Verification and Retesting (Interactive) -->
+    <div class="scenario-step-box active-action" id="step7_card" style="border-left: 4px solid var(--color-forest); background: #FAF9F2;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <strong style="color:var(--color-forest); font-size:14px;">
+          7. Verification &amp; Retesting &mdash; Evidence Review
+        </strong>
+        <span class="badge badge-forest">Human Verification</span>
+      </div>
+      <p style="font-size:12.5px; color:var(--color-charcoal); margin-top:6px; line-height:1.5;">
+        The development team submitted the following documented <strong>Evidence and Test Results</strong>:
+      </p>
+
+      <!-- Simulated Retest Evidence Display -->
+      <div style="background:#FFFFFF; border:1px solid var(--color-sage); border-radius:6px; padding:12px; margin:8px 0; font-size:12px;">
+        <div style="font-weight:700; color:var(--color-forest); display:flex; justify-content:space-between;">
+          <span>AUDIT CERTIFICATE #208: RETEST BENCHMARKS</span>
+          <span style="color:var(--color-risk-low); font-weight:800;">PASS (Simulated Data)</span>
+        </div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-top:8px; font-size:11.5px;">
+          <div>&bull; Disparate Impact Ratio: <strong>0.61 &rarr; 0.89</strong> (&ge; 0.80 benchmark)</div>
+          <div>&bull; Demographic Parity Gap: <strong>Reduced to 2.1%</strong></div>
+          <div>&bull; Dataset: <strong>10,000 synthetic test resumes</strong></div>
+          <div>&bull; PII Redaction: <strong>100% names/dates masked</strong></div>
+        </div>
+      </div>
+
+      <!-- Reviewer Adequacy Form -->
+      <div style="margin-top:10px;">
+        <label class="form-label" style="font-size:12px; font-weight:700;">Reviewer Verification Judgment:</label>
+        <div class="form-row" style="margin-bottom:8px;">
+          <div class="form-col">
+            <select id="step7_adequacy" class="form-select" style="font-size:12px;">
+              <option value="Adequate" selected>Adequate &mdash; Evidence confirms benchmarks met</option>
+              <option value="Requires Minor Re-audit">Requires Minor Re-audit</option>
+              <option value="Inadequate">Inadequate &mdash; Further debiasing needed</option>
+            </select>
+          </div>
+        </div>
+        <textarea id="step7_notes" class="form-control" rows="2" style="font-size:11.5px;" placeholder="Verification audit notes...">Audited debiasing test run #208 confirmed: 89% four-fifths rule compliance achieved. Screen-reader compatibility confirmed. Corrective action verified as adequate.</textarea>
+
+        <div style="margin-top:10px; display:flex; justify-content:flex-end;">
+          <button class="btn btn-primary btn-sm" id="btn_step_7" onclick="recordRetestVerification({{ project.id }})">
+            <i data-lucide="check" style="width:14px;height:14px;"></i> Record Verification Findings
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 8: Final Review & Decision (Interactive) -->
+    <div class="scenario-step-box active-action" id="step8_card" style="border-left: 4px solid var(--color-forest); background: #FAF9F2;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <strong style="color:var(--color-forest); font-size:14px;">
+          8. Final Ethics Gate Review &mdash; Official Decision
+        </strong>
+        <span class="badge badge-sage">Deliberation</span>
+      </div>
+      <p style="font-size:12.5px; color:var(--color-charcoal); margin-top:6px; line-height:1.5;">
+        With verifiable evidence recorded, the reviewer submits the final <strong>Ethics Gate Decision</strong>:
+      </p>
+
+      <div style="margin-top:8px;">
+        <label class="form-label" style="font-size:12px; font-weight:700;">Select Final Gate Decision:</label>
+        <select id="step8_decision" class="form-select" style="font-size:12.5px; font-weight:700; border:2px solid var(--color-forest); margin-bottom:8px;" onchange="document.getElementById('step8_conditions_wrap').style.display = (this.value === 'Proceed with Conditions') ? 'block' : 'none';">
+          <option value="Proceed with Conditions" selected>Proceed with Conditions (Recommended for responsible deployment)</option>
+          <option value="Proceed">Proceed (Full approval)</option>
+          <option value="Remediate and Review Again">Remediate and Review Again (Reject &amp; re-audit)</option>
+          <option value="Stop or Escalate">Stop or Escalate (Formal freeze)</option>
+        </select>
+
+        <div id="step8_conditions_wrap" style="background:#fefce8; border:1px solid #fde047; padding:8px 10px; border-radius:4px; margin-bottom:8px;">
+          <label class="form-label" style="font-size:11.5px; font-weight:700; color:#854d0e;">Binding Oversight Conditions:</label>
+          <textarea id="step8_conditions" class="form-control" rows="2" style="font-size:11.5px;">Mandatory monthly statistical parity audit report submission and recruiter double-blind inspection for any candidate score within 15% threshold.</textarea>
+        </div>
+
+        <textarea id="step8_notes" class="form-control" rows="2" style="font-size:11.5px;" placeholder="Reviewer final reasoning...">Testing stage verified with empirical retest evidence. Authorized to proceed to Deployment under binding continuous accountability conditions.</textarea>
+
+        <div style="margin-top:10px; display:flex; justify-content:flex-end;">
+          <button class="btn btn-secondary btn-sm" id="btn_step_8" onclick="recordFinalReview({{ project.id }})">
+            <i data-lucide="shield-check" style="width:14px;height:14px;"></i> Record Final Ethics Gate Decision
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 9: Verification Report Generation -->
+    <div class="scenario-step-box completed">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <strong style="color:var(--color-forest); font-size:14px;">
+          9. Ethical Verification Report Generation
+        </strong>
+        <span class="badge badge-forest">Real Database Output</span>
+      </div>
+      <p style="font-size:12.5px; color:var(--color-charcoal); margin-top:6px; line-height:1.5;">
+        Export the formal audit report reflecting the full verification trail: identified risks, initial gate rejection, corrective actions, empirical retest results, and final decision covenants.
+      </p>
+      <div style="display:flex; gap:10px; margin-top:10px; flex-wrap:wrap;">
+        <a href="{{ url_for('export_pdf', project_id=project.id) }}" class="btn btn-primary btn-sm">
+          <i data-lucide="download" style="width:14px;height:14px;"></i> Download Verification Report (PDF)
+        </a>
+        <a href="{{ url_for('export_csv', project_id=project.id, type='summary') }}" class="btn btn-outline-sage btn-sm">
+          <i data-lucide="file-spreadsheet" style="width:14px;height:14px;"></i> Summary CSV
+        </a>
+        <a href="{{ url_for('export_csv', project_id=project.id, type='risks') }}" class="btn btn-outline-sage btn-sm">
+          <i data-lucide="table" style="width:14px;height:14px;"></i> Risk Register CSV
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/demo_tour.js') }}"></script>
+{% endblock %}

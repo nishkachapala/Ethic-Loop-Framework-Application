@@ -1,0 +1,370 @@
+{% extends 'base.html' %}
+{% block title %}Ethical Risk Assessment &bull; ETHIC-Loop{% endblock %}
+{% block page_title %}Ethical Risk Register & Matrix{% endblock %}
+
+{% block content %}
+<!-- Project Selector & Filters Header -->
+<div class="card" style="padding:16px 20px; margin-bottom:20px;">
+  <form method="GET" action="{{ url_for('risks') }}" style="display:flex; flex-wrap:wrap; gap:12px; align-items:center; justify-content:space-between;">
+    <div style="display:flex; gap:10px; flex-wrap:wrap; flex:1;">
+      <div style="width:240px;">
+        <select name="project_id" class="form-select" onchange="this.form.submit()">
+          <option value="">All Projects</option>
+          {% for p in projects %}
+            <option value="{{ p.id }}" {% if project_id == p.id %}selected{% endif %}>
+              {{ p.name }} {% if p.is_demo %}(Demo){% endif %}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div style="flex:1; min-width:180px;">
+        <input type="text" name="q" value="{{ search }}" class="form-control" placeholder="Search risks, mitigations, stakeholders...">
+      </div>
+
+      <div style="width:140px;">
+        <select name="severity" class="form-select">
+          <option value="">All Severities</option>
+          <option value="Low" {% if sev_filter == 'Low' %}selected{% endif %}>Low (1–4)</option>
+          <option value="Moderate" {% if sev_filter == 'Moderate' %}selected{% endif %}>Moderate (5–9)</option>
+          <option value="High" {% if sev_filter == 'High' %}selected{% endif %}>High (10–16)</option>
+          <option value="Critical" {% if sev_filter == 'Critical' %}selected{% endif %}>Critical (17–25)</option>
+        </select>
+      </div>
+
+      <div style="width:150px;">
+        <select name="pillar" class="form-select">
+          <option value="">All Pillars</option>
+          <option value="Ethical Impact" {% if 'Ethical Impact' in pillar_filter %}selected{% endif %}>[E] Ethical Impact</option>
+          <option value="Transparency" {% if 'Transparency' in pillar_filter %}selected{% endif %}>[T] Transparency</option>
+          <option value="Human Oversight" {% if 'Human Oversight' in pillar_filter %}selected{% endif %}>[H] Human Oversight</option>
+          <option value="Inclusion and Fairness" {% if 'Inclusion' in pillar_filter %}selected{% endif %}>[I] Inclusion & Fairness</option>
+          <option value="Continuous Accountability" {% if 'Accountability' in pillar_filter %}selected{% endif %}>[C] Accountability</option>
+        </select>
+      </div>
+
+      <div style="width:140px;">
+        <select name="category" class="form-select">
+          <option value="">All Categories</option>
+          <option value="Bias and discrimination" {% if category_filter == 'Bias and discrimination' %}selected{% endif %}>Bias & Discrimination</option>
+          <option value="Privacy" {% if category_filter == 'Privacy' %}selected{% endif %}>Privacy</option>
+          <option value="Security" {% if category_filter == 'Security' %}selected{% endif %}>Security</option>
+          <option value="Transparency" {% if category_filter == 'Transparency' %}selected{% endif %}>Transparency</option>
+          <option value="Accessibility" {% if category_filter == 'Accessibility' %}selected{% endif %}>Accessibility</option>
+          <option value="Human oversight" {% if category_filter == 'Human oversight' %}selected{% endif %}>Human Oversight</option>
+        </select>
+      </div>
+    </div>
+
+    <div style="display:flex; gap:8px;">
+      <button type="submit" class="btn btn-outline btn-sm">Filter</button>
+      <a href="{{ url_for('risks', project_id=project_id) }}" class="btn btn-outline-sage btn-sm">Reset</a>
+      <button type="button" class="btn btn-primary btn-sm" onclick="openModal('quickRiskModal')">
+        <i data-lucide="plus" style="width:14px;height:14px;"></i> Log New Risk
+      </button>
+    </div>
+  </form>
+</div>
+
+<!-- Heuristic Risk Scale Explanation Banner -->
+<div class="card" style="padding:14px 18px; margin-bottom:20px; background:var(--color-cream-card); border-left:4px solid var(--color-forest);">
+  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+    <div>
+      <strong style="font-size:13px; color:var(--color-forest);">Mathematical Formulation: Risk Score = Likelihood (1–5) &times; Impact (1–5)</strong>
+      <div style="font-size:12px; color:var(--color-charcoal-muted); margin-top:2px;">
+        Proposed Illustrative Heuristic: <strong>1–4 Low</strong> &bull; <strong>5–9 Moderate</strong> &bull; <strong>10–16 High</strong> &bull; <strong>17–25 Critical</strong>.
+        <em>Note: This is a proposed conceptual framework heuristic for ethical prioritization, not an empirically validated universal scale. Numerical score alone does not guarantee safety.</em>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Two-Column Section: 5x5 Matrix Heatmap & Risk Summary Stats -->
+<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap:24px; margin-bottom:24px;">
+  <!-- Visual 5x5 Risk Matrix -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title">
+        <i data-lucide="grid" class="nav-icon" style="color:var(--color-forest);"></i>
+        <span>Visual 5&times;5 Ethical Risk Matrix (Click cell to filter)</span>
+      </div>
+    </div>
+    <div class="matrix-container">
+      <div style="font-size:11px; font-weight:700; color:var(--color-charcoal-muted); margin-bottom:8px;">
+        &uarr; LIKELIHOOD (Vertical) vs. IMPACT &rarr; (Horizontal)
+      </div>
+      <div class="matrix-grid">
+        <!-- Row for L=5 down to L=1 -->
+        {% for l in [5, 4, 3, 2, 1] %}
+          <div class="matrix-header-cell">L = {{ l }}</div>
+          {% for imp in [1, 2, 3, 4, 5] %}
+            {% set score = l * imp %}
+            {% set count = matrix[(l, imp)] %}
+            {% set cell_class = 'cell-crit' if score >= 17 else ('cell-high' if score >= 10 else ('cell-mod' if score >= 5 else 'cell-low')) %}
+            <div class="matrix-cell {{ cell_class }}" onclick="filterByMatrixCell({{ l }}, {{ imp }})" title="Likelihood: {{ l }}, Impact: {{ imp }} &bull; Score: {{ score }} &bull; Risks: {{ count }}">
+              <span class="matrix-count">{{ count }}</span>
+              <span class="matrix-score">Score {{ score }}</span>
+            </div>
+          {% endfor %}
+        {% endfor %}
+        <!-- Header row for bottom Impact values -->
+        <div></div>
+        {% for imp in [1, 2, 3, 4, 5] %}
+          <div class="matrix-header-cell">I = {{ imp }}</div>
+        {% endfor %}
+      </div>
+
+      <div style="display:flex; gap:16px; margin-top:14px; font-size:11px;">
+        <span style="display:flex; align-items:center; gap:4px;"><span style="width:12px;height:12px;background:#d1fae5;border-radius:2px;"></span> Low (1–4)</span>
+        <span style="display:flex; align-items:center; gap:4px;"><span style="width:12px;height:12px;background:#fef3c7;border-radius:2px;"></span> Moderate (5–9)</span>
+        <span style="display:flex; align-items:center; gap:4px;"><span style="width:12px;height:12px;background:#ffedd5;border-radius:2px;"></span> High (10–16)</span>
+        <span style="display:flex; align-items:center; gap:4px;"><span style="width:12px;height:12px;background:#fee2e2;border-radius:2px;"></span> Critical (17–25)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Priority Alert Card & Export -->
+  <div class="card" style="display:flex; flex-direction:column; justify-content:space-between;">
+    <div>
+      <div class="card-header">
+        <div class="card-title">
+          <i data-lucide="shield" class="nav-icon" style="color:var(--color-forest);"></i>
+          <span>Risk Governance Summary</span>
+        </div>
+        {% if project_id %}
+          <a href="{{ url_for('export_csv', project_id=project_id, type='risks') }}" class="btn btn-outline-sage btn-sm">
+            <i data-lucide="download" style="width:13px;height:13px;"></i> Export Risks CSV
+          </a>
+        {% endif %}
+      </div>
+      <p style="font-size:13px; color:var(--color-charcoal); line-height:1.5;">
+        The ETHIC-Loop Framework prevents critical and high-priority risks from being overlooked during development. Any risk scoring &ge; 10 triggers mandatory deliberation at the checkpoint <strong>Ethics Gate</strong>.
+      </p>
+
+      <div style="margin-top:16px; display:flex; flex-direction:column; gap:8px;">
+        <div style="display:flex; justify-content:space-between; padding:8px 12px; background:var(--color-cream-card); border-radius:var(--radius-md);">
+          <span>Total Active Risks in View:</span>
+          <strong>{{ risks|length }}</strong>
+        </div>
+        <div style="display:flex; justify-content:space-between; padding:8px 12px; background:var(--color-risk-crit-bg); border-radius:var(--radius-md); color:var(--color-risk-crit);">
+          <span>Critical Severity (Requires Immediate Remediate):</span>
+          <strong>{{ risks|selectattr('severity', 'equalto', 'Critical')|list|length }}</strong>
+        </div>
+        <div style="display:flex; justify-content:space-between; padding:8px 12px; background:var(--color-risk-high-bg); border-radius:var(--radius-md); color:var(--color-risk-high);">
+          <span>High Severity Risks:</span>
+          <strong>{{ risks|selectattr('severity', 'equalto', 'High')|list|length }}</strong>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:20px; font-size:11.5px; color:var(--color-charcoal-muted); padding-top:12px; border-top:1px solid var(--color-cream-border);">
+      Click any cell on the 5&times;5 matrix to filter risks matching that exact Likelihood &times; Impact score.
+    </div>
+  </div>
+</div>
+
+<!-- Active Filter Notice -->
+<div id="matrixFilterNotice" style="display:none; padding:10px 16px; background:var(--color-sage-light); border-radius:var(--radius-md); margin-bottom:14px; font-size:13px;"></div>
+
+<!-- Risk Register Table -->
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">
+      <i data-lucide="table" class="nav-icon" style="color:var(--color-forest);"></i>
+      <span>Comprehensive Ethical Risk Register ({{ risks|length }})</span>
+    </div>
+  </div>
+
+  <div class="table-responsive">
+    <table class="custom-table">
+      <thead>
+        <tr>
+          <th>Risk Title & Category</th>
+          <th>Project</th>
+          <th>Stage</th>
+          <th>Pillar</th>
+          <th>L &times; I = Score</th>
+          <th>Severity</th>
+          <th>Mitigation Plan</th>
+          <th>Owner / Due</th>
+          <th>Status</th>
+          <th style="text-align:right;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in risks %}
+        <tr class="risk-table-row" data-likelihood="{{ r.likelihood }}" data-impact="{{ r.impact }}">
+          <td style="max-width:240px;">
+            <strong style="color:var(--color-forest);">{{ r.title }}</strong>
+            <div style="font-size:11px; color:var(--color-charcoal-muted); margin-top:2px;">
+              Category: <span class="badge badge-cream" style="padding:1px 5px;">{{ r.category }}</span>
+            </div>
+            {% if r.affected_stakeholders %}
+              <div style="font-size:10.5px; color:var(--color-charcoal-light); margin-top:3px;">
+                Stakeholders: {{ r.affected_stakeholders }}
+              </div>
+            {% endif %}
+          </td>
+          <td>
+            <span style="font-size:12px; font-weight:600;">{{ r.project_name }}</span>
+          </td>
+          <td>
+            <span class="badge badge-sage">{{ r.stage_name }}</span>
+          </td>
+          <td>
+            <span style="font-size:11.5px;">{{ r.pillar }}</span>
+          </td>
+          <td>
+            <strong>{{ r.likelihood }} &times; {{ r.impact }} = {{ r.risk_score }}</strong>
+          </td>
+          <td>
+            <span class="badge badge-risk-{{ r.severity }}">{{ r.severity }}</span>
+          </td>
+          <td style="max-width:220px; font-size:12px;">
+            {{ r.mitigation_strategy or 'Pending mitigation strategy formulation.' }}
+          </td>
+          <td style="font-size:11.5px;">
+            <div>{{ r.responsible_person or 'Unassigned' }}</div>
+            {% if r.due_date %}
+              <div style="color:var(--color-charcoal-muted); font-size:10.5px;">Due: {{ r.due_date }}</div>
+            {% endif %}
+          </td>
+          <td>
+            <span class="badge badge-cream">{{ r.status }}</span>
+          </td>
+          <td style="text-align:right; white-space:nowrap;">
+            <button type="button" class="btn btn-outline btn-sm" onclick='openEditRiskModal({{ r|tojson }})' title="Edit Risk">
+              <i data-lucide="edit-2" style="width:13px;height:13px;"></i>
+            </button>
+            <form action="{{ url_for('delete_risk', risk_id=r.id) }}" method="POST" style="display:inline;" onsubmit="return confirm('Delete this risk?');">
+              <button type="submit" class="btn btn-outline btn-sm" style="color:var(--color-risk-crit);border-color:#fca5a5;">
+                <i data-lucide="trash-2" style="width:13px;height:13px;"></i>
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="10" style="text-align:center; padding:24px; color:var(--color-charcoal-muted);">
+            No ethical risks match the selected filter criteria.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Edit Risk Modal -->
+<div class="modal-backdrop" id="editRiskModal">
+  <div class="modal-dialog">
+    <form id="edit_risk_form" method="POST" action="">
+      <input type="hidden" id="edit_risk_id" name="risk_id">
+      <div class="modal-header">
+        <div class="modal-title">Edit Ethical Risk & Mitigations</div>
+        <button type="button" class="modal-close-btn" onclick="closeModal('editRiskModal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Risk Title *</label>
+          <input type="text" name="title" id="edit_title" class="form-control" required>
+        </div>
+        <div class="form-row">
+          <div class="form-col">
+            <label class="form-label">Ethical Pillar *</label>
+            <select name="pillar" id="edit_pillar" class="form-select" required>
+              <option value="Ethical Impact Assessment">[E] Ethical Impact Assessment</option>
+              <option value="Transparency and Trust">[T] Transparency and Trust</option>
+              <option value="Human Oversight">[H] Human Oversight</option>
+              <option value="Inclusion and Fairness">[I] Inclusion and Fairness</option>
+              <option value="Continuous Accountability">[C] Continuous Accountability</option>
+            </select>
+          </div>
+          <div class="form-col">
+            <label class="form-label">Lifecycle Stage *</label>
+            <select name="stage_name" id="edit_stage_name" class="form-select" required>
+              <option value="Requirements">1. Requirements</option>
+              <option value="Design">2. Design</option>
+              <option value="Development">3. Development</option>
+              <option value="Testing">4. Testing</option>
+              <option value="Deployment">5. Deployment</option>
+              <option value="Maintenance">6. Maintenance</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-col">
+            <label class="form-label">Category *</label>
+            <select name="category" id="edit_category" class="form-select" required>
+              <option value="Bias and discrimination">Bias and discrimination</option>
+              <option value="Privacy">Privacy</option>
+              <option value="Security">Security</option>
+              <option value="Transparency">Transparency</option>
+              <option value="Accessibility">Accessibility</option>
+              <option value="Human oversight">Human oversight</option>
+              <option value="Accountability">Accountability</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="form-col">
+            <label class="form-label">Affected Stakeholders</label>
+            <input type="text" name="affected_stakeholders" id="edit_affected_stakeholders" class="form-control">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-col">
+            <label class="form-label">Likelihood (1–5)</label>
+            <input type="range" name="likelihood" id="edit_likelihood" min="1" max="5" class="form-control" oninput="updateRiskCalcPreview('edit');">
+          </div>
+          <div class="form-col">
+            <label class="form-label">Impact (1–5)</label>
+            <input type="range" name="impact" id="edit_impact" min="1" max="5" class="form-control" oninput="updateRiskCalcPreview('edit');">
+          </div>
+        </div>
+        <!-- Live Score Calculation Box -->
+        <div style="background:var(--color-cream); border:1px solid var(--color-cream-border); padding:10px 14px; border-radius:var(--radius-md); margin-bottom:16px; display:flex; align-items:center; justify-content:space-between;">
+          <div>
+            <span style="font-size:12px; font-weight:600; color:var(--color-charcoal-muted);">CALCULATED SCORE:</span>
+            <strong style="font-size:16px; margin-left:8px; color:var(--color-forest);" id="edit_score_preview">--</strong>
+          </div>
+          <div>
+            <span class="badge" id="edit_severity_preview">--</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Detailed Description</label>
+          <textarea name="description" id="edit_description" class="form-control" rows="2"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Mitigation Strategy / Retest Findings</label>
+          <textarea name="mitigation_strategy" id="edit_mitigation_strategy" class="form-control" rows="2"></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-col">
+            <label class="form-label">Responsible Person</label>
+            <input type="text" name="responsible_person" id="edit_responsible_person" class="form-control">
+          </div>
+          <div class="form-col">
+            <label class="form-label">Due Date</label>
+            <input type="date" name="due_date" id="edit_due_date" class="form-control">
+          </div>
+          <div class="form-col">
+            <label class="form-label">Status</label>
+            <select name="status" id="edit_status" class="form-select">
+              <option value="Open">Open</option>
+              <option value="Mitigating">Mitigating</option>
+              <option value="Under Review">Under Review</option>
+              <option value="Resolved">Resolved</option>
+              <option value="Accepted">Accepted</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" onclick="closeModal('editRiskModal')">Cancel</button>
+        <button type="submit" class="btn btn-primary">Update Risk Record</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+{% block title %}Five Pillars (E-T-H-I-C) &bull; ETHIC-Loop{% endblock %}
+{% block page_title %}Five Pillars Assessment (E-T-H-I-C){% endblock %}
+
+{% block content %}
+<!-- Project Selector & Pillar Progress Overview -->
+<div class="card" style="padding:16px 20px; margin-bottom:20px;">
+  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+    <div style="display:flex; align-items:center; gap:12px;">
+      <span style="font-weight:700; color:var(--color-forest);">Select Project:</span>
+      <form method="GET" action="{{ url_for('pillars') }}" id="pillarProjForm">
+        <select name="project_id" class="form-select" onchange="document.getElementById('pillarProjForm').submit()" style="width:320px; font-weight:600;">
+          {% for p in projects %}
+            <option value="{{ p.id }}" {% if p.id == project.id %}selected{% endif %}>
+              {{ p.name }} {% if p.is_demo %}(Demo){% endif %}
+            </option>
+          {% endfor %}
+        </select>
+      </form>
+    </div>
+
+    <div style="display:flex; align-items:center; gap:14px;">
+      <div style="font-size:12.5px;">
+        Pillars Evaluated: <strong>{{ completed_count }} / {{ total_count }}</strong>
+      </div>
+      <div class="progress-container" style="width:140px;">
+        <div class="progress-bar-fill" style="width: {{ (completed_count / total_count * 100)|int if total_count > 0 else 0 }}%;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Ethical Governance Warning Box -->
+<div class="card" style="padding:14px 18px; margin-bottom:24px; background:var(--color-cream-card); border-left:4px solid var(--color-forest);">
+  <div style="font-size:12.5px; color:var(--color-charcoal); line-height:1.5;">
+    <strong>Academic Methodology Notice:</strong> Completing questionnaire checklists does <em>not</em> mathematically prove that an algorithmic system is ethical.
+    The five pillars represent systematic lenses for qualitative reflection, institutional accountability, and stakeholder impact analysis.
+  </div>
+</div>
+
+<!-- Five Pillars Cards Grid -->
+<div class="pillars-grid">
+  {% for p in pillars %}
+  <div class="pillar-card">
+    <div class="pillar-header">
+      <div class="pillar-badge-circle">{{ p.pillar_code }}</div>
+      <div>
+        <div class="pillar-title">{{ p.pillar_name }}</div>
+        <div style="margin-top:2px;">
+          {% if p.status == 'Completed' %}
+            <span class="badge badge-gate-Proceed">Completed</span>
+          {% elif p.status == 'In Progress' %}
+            <span class="badge badge-sage">In Progress</span>
+          {% else %}
+            <span class="badge badge-cream">Pending</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="pillar-purpose">
+      {{ p.purpose }}
+    </div>
+
+    <!-- Form for this pillar -->
+    <form action="{{ url_for('save_pillar', pillar_id=p.id) }}" method="POST" style="display:flex; flex-direction:column; flex:1;">
+      <div style="font-size:12px; font-weight:700; color:var(--color-forest); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.5px;">
+        Assessment Questions & Checklists:
+      </div>
+
+      <div style="background:var(--color-cream); border:1px solid var(--color-cream-border); border-radius:var(--radius-md); padding:10px 14px; margin-bottom:14px; flex:1;">
+        {% for q in p.questions %}
+        <div class="checklist-item">
+          <input type="checkbox" name="q_{{ loop.index0 }}" class="checklist-checkbox" id="p_{{ p.id }}_q_{{ loop.index0 }}" {% if q.done %}checked{% endif %}>
+          <label for="p_{{ p.id }}_q_{{ loop.index0 }}" style="cursor:pointer; font-size:12px; color:var(--color-charcoal);">
+            {{ q.q }}
+          </label>
+        </div>
+        {% endfor %}
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" style="font-size:11.5px;">Evidence & Audit Notes</label>
+        <textarea name="evidence_notes" class="form-control" rows="2" style="font-size:12px;" placeholder="Document empirical evidence, policy documents, or testing results...">{{ p.evidence_notes or '' }}</textarea>
+      </div>
+
+      <div class="form-row" style="margin-bottom:12px;">
+        <div class="form-col">
+          <label class="form-label" style="font-size:11.5px;">Status</label>
+          <select name="status" class="form-select" style="font-size:12px;">
+            <option value="Pending" {% if p.status == 'Pending' %}selected{% endif %}>Pending</option>
+            <option value="In Progress" {% if p.status == 'In Progress' %}selected{% endif %}>In Progress</option>
+            <option value="Completed" {% if p.status == 'Completed' %}selected{% endif %}>Completed</option>
+          </select>
+        </div>
+        <div class="form-col" style="display:flex; align-items:flex-end;">
+          <button type="submit" class="btn btn-primary btn-sm" style="width:100%;">
+            <i data-lucide="save" style="width:13px;height:13px;"></i> Save Pillar
+          </button>
+        </div>
+      </div>
+
+      <!-- Linked Risks for this Pillar -->
+      <div style="border-top:1px dashed var(--color-cream-border); padding-top:10px; margin-top:auto;">
+        <div style="font-size:11px; font-weight:700; color:var(--color-charcoal-muted); display:flex; justify-content:space-between; align-items:center;">
+          <span>LINKED RISKS ({{ p.linked_risks|length }}):</span>
+          <a href="{{ url_for('risks', project_id=project.id, pillar=p.pillar_code) }}" style="color:var(--color-forest); text-decoration:none;">View in Matrix &rarr;</a>
+        </div>
+        {% if p.linked_risks %}
+          <div style="display:flex; flex-direction:column; gap:6px; margin-top:6px;">
+            {% for lr in p.linked_risks[:2] %}
+            <div style="font-size:11.5px; display:flex; justify-content:space-between; align-items:center; background:#FFFFFF; padding:4px 8px; border-radius:4px; border:1px solid var(--color-cream-border);">
+              <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:200px;">{{ lr.title }}</span>
+              <span class="badge badge-risk-{{ lr.severity }}" style="font-size:9.5px; padding:1px 5px;">{{ lr.severity }}</span>
+            </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div style="font-size:11px; color:var(--color-charcoal-muted); margin-top:4px;">No risks mapped directly to this pillar.</div>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}
